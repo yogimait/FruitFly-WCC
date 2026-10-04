@@ -30,13 +30,20 @@ These need a running server and are therefore not in `test_all.py`.
 
 ```bash
 cd dashboard && bun run dev          # or: bun run preview --port 5177
-python scripts/verify_dashboard.py  # rendered values, accessibility, camera path
+python scripts/verify_dashboard.py  # rendered values, accessibility, playback, camera path
+python scripts/verify_camera.py     # preview visible, motion measured, fly reacts, no-camera fallback
 python scripts/verify_camera_tuning.py   # encoder response to noise vs real motion
 python scripts/measure_noise_floor.py     # measures the noise floor, sweeps candidate bars
 ```
 
 Start the dev server on **5173** for the camera scripts; they default to that port.
 `verify_dashboard.py` defaults to **5177** and accepts a URL argument.
+
+Two scripts were retired rather than fixed: `verify_dashboard.py` and `verify_ui.py` both drove a
+tabbed UI that was deliberately removed in favour of the single-view layout, so they were failing
+while proving nothing. Their still-useful assertions — rendered measured values and live playback
+behaviour — now live in `verify_dashboard.py`. `verify_camera_response.py` was superseded by
+`verify_camera_tuning.py`, which covers the realistic case.
 
 ### Shared fake clips
 

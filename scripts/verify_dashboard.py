@@ -89,7 +89,29 @@ def main() -> int:
         if page.get_by_role('group', name='synthetic stimulus playback').count() == 0:
             failures.append('playback controls have no accessible group label')
 
-        # 5. Camera mode drives the live encoder.
+        # 5. Playback controls must actually change the rendered state. Dead buttons were the
+        # original complaint about this UI, so this asserts behaviour, not presence.
+        before = text
+        page.get_by_role('button', name='Step', exact=True).click()
+        page.wait_for_timeout(700)
+        after_step = page.inner_text('body')
+        print(f'playback   Step changes state: {before != after_step}')
+        if before == after_step:
+            failures.append('Step button does not change the rendered state')
+
+        page.get_by_role('button', name='Start', exact=True).click()
+        page.wait_for_timeout(2200)
+        after_run = page.inner_text('body')
+        if after_run == after_step:
+            failures.append('Start button does not change the rendered state')
+        print(f'playback   Start runs:         {after_run != after_step}')
+
+        page.get_by_role('button', name='Stop', exact=True).click()
+        page.wait_for_timeout(800)
+        if 'replaying' in page.inner_text('body'):
+            failures.append('Stop button does not halt playback')
+
+        # 6. Camera mode drives the live encoder.
         #
         # This needs its own browser: --use-file-for-fake-video-capture is a LAUNCH option, not a
         # context option. Creating a context with permissions=['camera'] on an ordinary browser

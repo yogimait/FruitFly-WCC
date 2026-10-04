@@ -83,7 +83,8 @@ measurement without rebuilding the dashboard:
 for `verify_dashboard.py`):
 
 ```powershell
-& $py scripts\verify_dashboard.py       # rendered values, accessibility, camera path
+& $py scripts\verify_dashboard.py       # rendered values, accessibility, playback, camera path
+& $py scripts\verify_camera.py          # preview visible, motion measured, fly reacts
 & $py scripts\verify_camera_tuning.py   # noise must be silent, real motion must drive spikes
 & $py scripts\measure_noise_floor.py    # measures the noise floor, sweeps candidate thresholds
 ```
