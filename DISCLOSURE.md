@@ -52,6 +52,8 @@ Written before 10:00 IST on 4 Oct 2026. **None of this is the core product** —
 | Item | Nature |
 |---|---|
 | `dashboard/` | Fresh `bun create vite` React 19 + TS scaffold, plus Tailwind 4, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`. UI components composed by hand following shadcn conventions — no shadcn CLI, no copied shadcn source |
+| `dashboard/` 3D | `three` + `@react-three/fiber` + `@react-three/drei` + `recharts`, added for the visualization and charts |
+| `dashboard/` fly | `src/components/fly.tsx` is **procedural geometry written for this project** — spheres, cylinders and planes. No third-party model, mesh, or texture file is used, so no external asset licence applies |
 | `docs/Biological-Reference.md` | Literature values gathered from published sources. Contains **no measurements of our own** |
 | `docs/Architecture.md`, `docs/Home.md`, `AGENTS.md` | Documentation and rules |
 | `.vibe-wise/` | Learning notes. Gitignored |

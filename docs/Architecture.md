@@ -61,16 +61,31 @@ Primary path: **LPLC2 (185 neurons in subset) → DNp01 (2 neurons)**. Verified 
 
 ## Dashboard
 
-React 19 + Vite 8 + Tailwind 4. UI primitives follow shadcn conventions (composed from `class-variance-authority` + `cn`), installed directly rather than via the shadcn CLI.
+React 19 + Vite 8 + Tailwind 4, with `three.js` via `@react-three/fiber` and Recharts for plots. UI primitives follow shadcn conventions (composed from `class-variance-authority` + `cn`), installed directly rather than via the shadcn CLI.
+
+Three tabs, because the three kinds of evidence should not sit in one scroll:
+
+| Tab | Contents |
+|---|---|
+| `live` | 3D fly, latency vs 19 ms, spike raster, reproducibility, separability |
+| `sweep` | Latency-vs-size curve, rate-vs-size curve with the refractory ceiling marked |
+| `reference` | The published targets, with sources |
+
+**The 3D fly is procedural, not a downloaded mesh.** Three reasons: every photoreal fruitfly asset found online is CC-BY or CC-BY-NC with attribution terms that must be exactly right in a submission; a textured scan is 3–30 MB against a few KB here, which matters on a judge's laptop with no network; and a primitive body can be *driven* — wing beat frequency is bound to the measured spike rate, which a static mesh could not do without animation retargeting. Anatomy follows the real animal (large compound eyes on a small head, thorax carrying both wing pairs and all six legs, banded tapering abdomen) but is explicitly schematic, not morphometric.
+
+**Bundle split:** `three.js` is ~1.2 MB, so both the fly and `@react-three/fiber` are lazily imported. Initial payload is **186 KB gzipped**; the 3D chunk loads only when the `live` tab opens. The tabs carrying the actual measurements stay fast to first paint.
 
 State arrives by **1 s polling** of `/api/experiment`, not SSE or WebSocket. Justification: a single LIF step takes 1–2 s, so polling is already faster than the producer. A stream would add a server protocol for no observable gain.
 
 ```
 src/
-  App.tsx                  layout and run controls
+  App.tsx                  layout, tabs, run controls
   components/
+    fly.tsx                procedural Drosophila, wing beat driven by spike rate
+    fly-panel.tsx          canvas host, lazy-load boundary
     latency-panel.tsx      headline: measured vs published 19 ms
     raster-panel.tsx       SVG spike raster
+    sweep-charts.tsx       latency and saturation curves with reference lines
     measure-panels.tsx     seed reproducibility, separability
     ui/                    button, card, badge, progress
   lib/
@@ -78,6 +93,6 @@ src/
     useExperiment.ts       polling hook and control client
 ```
 
-Saturation is displayed as a **first-class state**, not hidden. When the giant fiber is at its refractory ceiling the panel shows `SATURATED — result unreliable` regardless of the measured value, because `docs/Biological-Reference.md` pre-registers saturation as the known confound.
+Saturation is displayed as a **first-class state**, not hidden. When the giant fiber is at its refractory ceiling the panel shows `SATURATED — result unreliable` and the fly's brain glow turns red, regardless of the measured value, because `docs/Biological-Reference.md` pre-registers saturation as the known confound.
 
 Related: [[Home]] · [[Biological-Reference]] · [[Experiments]] · [[Roadmap]]
