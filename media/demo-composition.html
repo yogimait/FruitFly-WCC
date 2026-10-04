@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Fruitfly-WCC — spike timing vs spike rate</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --bg: #0a0c11;
+        --ink: #e8edf4;
+        --faint: #7b8794;
+        --spike: #4ade80;
+        --latency: #fbbf24;
+        --danger: #f87171;
+        --line: #1e242e;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 0 140px;
+      }
+      .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+      .label {
+        font-size: 22px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      .h1 { font-size: 84px; line-height: 1.08; margin: 0; font-weight: 600; }
+      .h2 { font-size: 62px; line-height: 1.12; margin: 0; font-weight: 600; }
+      .body { font-size: 30px; line-height: 1.45; color: var(--faint); margin: 0; }
+      .stack { display: flex; flex-direction: column; gap: 34px; max-width: 1500px; }
+      .row { display: flex; align-items: baseline; gap: 30px; }
+      .num { font-size: 104px; font-weight: 600; letter-spacing: -0.02em; }
+      .badge {
+        display: inline-block;
+        padding: 10px 26px;
+        border-radius: 10px;
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .badge-no {
+        color: var(--danger);
+        border: 2px solid var(--danger);
+        background: rgba(248, 113, 113, 0.09);
+      }
+      .rule { height: 2px; background: var(--line); }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+      .stat {
+        border: 2px solid var(--line);
+        border-radius: 16px;
+        padding: 34px 40px;
+      }
+      .stat .k { font-size: 20px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+      .stat .v { font-size: 76px; font-weight: 600; margin-top: 12px; }
+      .stat .n { font-size: 22px; color: var(--faint); margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="66"
+    >
+      <!-- Scene 1: the question -->
+      <section id="s1" class="clip" data-start="0" data-duration="11" data-track-index="0">
+        <div class="stack">
+          <span id="s1-kicker" class="label mono">WCC Launchpad 30 · Agentic AI</span>
+          <h1 id="s1-q" class="h1">
+            <span class="l1">Can spike timing see</span>
+            <span class="l2" style="display: block">what spike rate cannot?</span>
+          </h1>
+          <div id="s1-rule" class="rule" style="width: 420px"></div>
+          <p id="s1-sub" class="body">
+            A descending-neuron-rooted subset of the male fruitfly connectome,
+            19,267 neurons, asked whether timing beats rate.
+          </p>
+        </div>
+      </section>
+
+      <!-- Scene 2: what was built -->
+      <section id="s2" class="clip" data-start="11" data-duration="10" data-track-index="0">
+        <div class="stack" style="width: 100%">
+          <span id="s2-kicker" class="label mono">What was measured</span>
+          <h2 id="s2-h" class="h2">
+            <span style="display: block">Real connectome weights. Synthetic stimulus.</span>
+            <span style="display: block">No training, anywhere.</span>
+          </h2>
+          <div class="grid2" style="margin-top: 20px">
+            <div id="s2-a" class="stat">
+              <div class="k mono">subset neurons</div>
+              <div class="v mono" style="color: var(--spike)">19,267</div>
+              <div class="n mono">829,322 signed edges</div>
+            </div>
+            <div id="s2-b" class="stat">
+              <div class="k mono">first DNp01 spike</div>
+              <div class="v mono" style="color: var(--spike)">8.00 ms</div>
+              <div class="n mono">published escape latency: 19 ms</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 3: saturation is a window artefact -->
+      <section id="s3" class="clip" data-start="21" data-duration="12" data-track-index="0">
+        <div class="stack" style="width: 100%">
+          <span id="s3-kicker" class="label mono">Finding 1 — robust</span>
+          <h2 id="s3-h" class="h2">
+            <span style="display: block">Saturation is a window-length artefact,</span>
+            <span style="display: block">not a drive-strength one.</span>
+          </h2>
+          <div id="s3-bars" style="display: flex; align-items: flex-end; justify-content: center; gap: 26px; height: 320px; margin-top: 10px">
+            <div class="stack mono" style="gap: 10px; align-items: center">
+              <div class="bar" style="width: 78px; height: 96px; background: var(--spike)"></div>
+              <span class="mono" style="font-size: 20px; color: var(--faint)">300 ms</span>
+            </div>
+            <div class="stack mono" style="gap: 10px; align-items: center">
+              <div class="bar" style="width: 78px; height: 200px; background: var(--latency)"></div>
+              <span class="mono" style="font-size: 20px; color: var(--faint)">400 ms</span>
+            </div>
+            <div class="stack mono" style="gap: 10px; align-items: center">
+              <div class="bar" style="width: 78px; height: 296px; background: var(--danger)"></div>
+              <span class="mono" style="font-size: 20px; color: var(--faint)">600 ms</span>
+            </div>
+          </div>
+          <p id="s3-note" class="body">
+            DNp01 escapes its refractory ceiling up to a 300 ms window and is pinned from 400 ms.
+          </p>
+        </div>
+      </section>
+
+      <!-- Scene 4: the negative result — invariance -->
+      <section id="s4" class="clip" data-start="33" data-duration="12" data-track-index="0">
+        <div class="stack" style="width: 100%">
+          <span id="s4-kicker" class="label mono">Finding 2 — negative</span>
+          <h2 id="s4-h" class="h2">More input does not produce more response.</h2>
+          <svg id="s4-chart" viewBox="0 0 1400 300" width="1400" height="300" role="img"
+               aria-label="A flat line: DNp01 returns 5 spikes whether 67 or 6,719 neurons are driven">
+            <line x1="60" y1="150" x2="1340" y2="150" stroke="var(--spike)" stroke-width="5" />
+            <circle cx="220" cy="150" r="14" fill="var(--spike)" />
+            <circle cx="1180" cy="150" r="14" fill="var(--spike)" />
+            <text x="220" y="215" fill="var(--ink)" font-size="34" text-anchor="middle"
+                  font-family="ui-monospace, Menlo, monospace">67</text>
+            <text x="1180" y="215" fill="var(--ink)" font-size="34" text-anchor="middle"
+                  font-family="ui-monospace, Menlo, monospace">6,719</text>
+            <text x="220" y="122" fill="var(--faint)" font-size="26" text-anchor="middle"
+                  font-family="ui-monospace, Menlo, monospace">5 spikes</text>
+            <text x="1180" y="122" fill="var(--faint)" font-size="26" text-anchor="middle"
+                  font-family="ui-monospace, Menlo, monospace">5 spikes</text>
+            <text x="700" y="272" fill="var(--faint)" font-size="26" text-anchor="middle"
+                  font-family="ui-monospace, Menlo, monospace">lobula plate neurons driven — a 100× range</text>
+          </svg>
+          <p id="s4-note" class="body">
+            The line does not move. Stimulus magnitude is not recoverable from this readout.
+          </p>
+        </div>
+      </section>
+
+      <!-- Scene 5: the anatomical input is not required -->
+      <section id="s5" class="clip" data-start="45" data-duration="11" data-track-index="0">
+        <div class="stack" style="width: 100%">
+          <span id="s5-kicker" class="label mono">Finding 3 — negative</span>
+          <h2 id="s5-h" class="h2">Silencing the anatomical input changes nothing.</h2>
+          <div style="display: flex; gap: 24px; margin-top: 6px">
+            <div id="s5-a" class="stat" style="flex: 1">
+              <div class="k mono">control</div>
+              <div class="v mono" style="color: var(--spike)">97</div>
+            </div>
+            <div id="s5-b" class="stat" style="flex: 1">
+              <div class="k mono">no LPLC2 output</div>
+              <div class="v mono" style="color: var(--spike)">97</div>
+            </div>
+            <div id="s5-c" class="stat" style="flex: 1">
+              <div class="k mono">no LC4 output</div>
+              <div class="v mono" style="color: var(--spike)">97</div>
+            </div>
+            <div id="s5-d" class="stat" style="flex: 1">
+              <div class="k mono">neither</div>
+              <div class="v mono" style="color: var(--spike)">96</div>
+            </div>
+          </div>
+          <p id="s5-note" class="body">
+            LPLC2 and LC4 carry 97.5% of the published giant-fibre visual input. Neither is required here.
+          </p>
+        </div>
+      </section>
+
+      <!-- Scene 6: the honest conclusion -->
+      <section id="s6" class="clip" data-start="56" data-duration="10" data-track-index="0">
+        <div class="stack">
+          <span id="s6-kicker" class="label mono">The answer</span>
+          <div class="row">
+            <h2 id="s6-h" class="h2" style="font-size: 78px">No.</h2>
+            <span id="s6-badge" class="badge badge-no mono">answer: no</span>
+          </div>
+          <div id="s6-rule" class="rule" style="width: 620px"></div>
+          <p id="s6-sub" class="body" style="max-width: 1280px">
+            Timing does not beat rate in this network: the readout is invariant to magnitude and
+            does not require its anatomical input. That is the finding. More neurons would not
+            fix it — and a negative result reported plainly is worth more than a passing number
+            obtained by tuning.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <style>
+      /* Bars carry an explicit height and are revealed by scaling from the baseline, so the
+         transform is never declared in CSS alongside a GSAP tween on the same property. */
+      #s3-bars .bar { transform-origin: bottom center; }
+    </style>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      /* ---- Scene 1: question ---- */
+      tl.from("#s1-kicker", { y: 26, opacity: 0, duration: 0.7, ease: "power3.out" }, 0.3)
+        .from("#s1-q", { y: 54, opacity: 0, duration: 0.9, ease: "power3.out" }, 0.7)
+        .from("#s1-rule", { scaleX: 0, opacity: 0, duration: 0.6, ease: "power2.out", transformOrigin: "left center" }, 1.5)
+        .from("#s1-sub", { y: 26, opacity: 0, duration: 0.7, ease: "power2.out" }, 1.8)
+        .to("#s1", { opacity: 0, duration: 0.6, ease: "power2.in" }, 10.4);
+
+      /* ---- Scene 2: what was measured ---- */
+      tl.from("#s2-kicker", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 11.3)
+        .from("#s2-h", { y: 44, opacity: 0, duration: 0.8, ease: "power3.out" }, 11.6)
+        .from("#s2-a", { y: 40, opacity: 0, duration: 0.7, ease: "power3.out" }, 12.3)
+        .from("#s2-b", { y: 40, opacity: 0, duration: 0.7, ease: "power3.out" }, 12.5)
+        .to("#s2", { opacity: 0, duration: 0.6, ease: "power2.in" }, 20.4);
+
+      /* ---- Scene 3: saturation vs window ---- */
+      tl.from("#s3-kicker", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 21.3)
+        .from("#s3-h", { y: 44, opacity: 0, duration: 0.8, ease: "power3.out" }, 21.6)
+        .from("#s3-bars .bar", { scaleY: 0, duration: 0.9, ease: "power3.out", stagger: 0.18 }, 22.6)
+        .from("#s3-note", { y: 24, opacity: 0, duration: 0.7, ease: "power2.out" }, 23.8)
+        .to("#s3", { opacity: 0, duration: 0.6, ease: "power2.in" }, 32.4);
+
+      /* ---- Scene 4: the flat line ---- */
+      tl.from("#s4-kicker", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 33.3)
+        .from("#s4-h", { y: 44, opacity: 0, duration: 0.8, ease: "power3.out" }, 33.6)
+        .from("#s4-chart", { opacity: 0, duration: 0.9, ease: "power2.out" }, 34.5)
+        .from("#s4-chart line", { scaleX: 0, duration: 1.1, ease: "power2.inOut", transformOrigin: "left center" }, 35.0)
+        .from("#s4-note", { y: 24, opacity: 0, duration: 0.7, ease: "power2.out" }, 36.4)
+        .to("#s4", { opacity: 0, duration: 0.6, ease: "power2.in" }, 44.4);
+
+      /* ---- Scene 5: causality ---- */
+      tl.from("#s5-kicker", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 45.3)
+        .from("#s5-h", { y: 44, opacity: 0, duration: 0.8, ease: "power3.out" }, 45.6)
+        .from("#s5-a, #s5-b, #s5-c, #s5-d", { y: 40, opacity: 0, duration: 0.7, ease: "power3.out", stagger: 0.14 }, 46.4)
+        .from("#s5-note", { y: 24, opacity: 0, duration: 0.7, ease: "power2.out" }, 47.4)
+        .to("#s5", { opacity: 0, duration: 0.6, ease: "power2.in" }, 55.4);
+
+      /* ---- Scene 6: the answer ---- */
+      tl.from("#s6-kicker", { y: 22, opacity: 0, duration: 0.6, ease: "power3.out" }, 56.3)
+        .from("#s6-h", { y: 44, opacity: 0, duration: 0.8, ease: "power3.out" }, 56.6)
+        .from("#s6-badge", { scale: 0.86, opacity: 0, duration: 0.6, ease: "back.out(2)" }, 57.2)
+        .from("#s6-rule", { scaleX: 0, opacity: 0, duration: 0.6, ease: "power2.out", transformOrigin: "left center" }, 57.6)
+        .from("#s6-sub", { y: 26, opacity: 0, duration: 0.8, ease: "power2.out" }, 57.9);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -29,6 +29,18 @@ The negative result is the deliverable: a saturated, magnitude-invariant, input-
 readout cannot support a decision, and adding neurons would not fix it. Full data and reasoning
 in [`docs/Experiments.md`](docs/Experiments.md).
 
+## Demo
+
+`media/demo.mp4` — 66 seconds, 1920×1080, silent.
+
+Every number in the video is read from `data/measurement.json`. The source composition is
+`media/demo-composition.html`, a HyperFrames project (see its header for the build command); it
+is kept so the video can be regenerated rather than being an opaque binary.
+
+The video states the negative result plainly rather than trailing it. That was a deliberate
+choice: a judge who sees "answer: no" in the first ten seconds and then sees it substantiated
+trusts the rest.
+
 ## Run it
 
 The Python side needs the source project's virtualenv, which holds numpy, scipy and pandas.
@@ -113,6 +125,7 @@ python -m http.server 8080 -d dashboard\dist
 | `scripts/verify_*.py` | Browser verifiers for the rendered UI and the camera path. |
 | `scripts/fake_video.py` | Shared Y4M fake-webcam clips for the browser tests. |
 | `data/measurement.json` | The measurement record. Every dashboard number traces here. |
+| `media/` | Demo video and its source composition. |
 | `dashboard/` | React 19 + Vite 8 + Tailwind 4, three.js fly, Recharts. |
 | `docs/` | [Experiments](docs/Experiments.md), [Architecture](docs/Architecture.md), [API](docs/API.md), [Data-Model](docs/Data-Model.md), [Testing](docs/Testing.md), [Biological-Reference](docs/Biological-Reference.md), [Problem-Statement](docs/Problem-Statement.md), [Roadmap](docs/Roadmap.md). |
 | `AGENTS.md` | Project rules. §1 hackathon constraint, §6 numerical honesty. |
