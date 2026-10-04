@@ -4,3 +4,7 @@ __pycache__/
 .vibe-wise/
 data/*.png
 node_modules/
+
+# Build output and the default dashboard README (Vite boilerplate)
+dashboard/dist/
+dashboard/README.md
