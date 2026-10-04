@@ -1,32 +1,37 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 import type { Group, Mesh, MeshStandardMaterial } from 'three'
 
 /**
- * The scene: a fly facing an approaching disk, with its brain lit by neural activity.
+ * Procedural Drosophila melanogaster, adult male — elongated build.
  *
- * Everything the viewer needs to understand the experiment is drawn in the scene rather than
- * described in text: the disk IS the stimulus, the fly faces it, and the brain glow IS the
- * measured descending-neuron response. No panel explains it because the scene does.
+ * Built from primitives rather than a downloaded mesh. Three reasons:
+ *   1. Licence. Every photoreal fruitfly asset found online is CC-BY or CC-BY-NC with attribution
+ *      terms that must be exactly right in a submission.
+ *   2. Size. A textured scan is 3-30 MB; this is a few KB and renders with no network fetch.
+ *   3. It is drivable. Wing beat frequency is bound to the measured spike rate.
  *
- * Anatomy follows the real animal: large compound eyes on a small head, a thorax carrying both
- * wing pairs and all six legs, a banded tapering abdomen, and bristles. Proportions are
- * approximate — schematic for orientation, not a morphometric reconstruction.
+ * Silhouette follows the real animal: a small head, a heavy thorax, and a long abdomen that
+ * tapers through five visibly banded segments — roughly 1.4x the combined head+thorax length,
+ * which is what makes a fly read as a fly rather than as a generic insect. Legs are long and
+ * spindly, wings are held swept back, compound eyes are large and red.
  */
 
-const THORAX = '#5c4a3a'
-const ABDOMEN = '#7a6248'
-const ABDOMEN_BAND = '#43372b'
+const HEAD = '#6b5340'
+const THORAX = '#7a5c42'
+const ABDOMEN_A = '#8a6a4c'
+const ABDOMEN_B = '#5d4632'
+const ABDOMEN_C = '#3a2c20'
 const EYE = '#c0392b'
 const EYE_DARK = '#5a1610'
-const WING = '#e9eef2'
-const VEIN = '#2c2622'
-const LEG = '#2e2620'
+const WING = '#dbe6ec'
+const VEIN = '#3a2f26'
+const LEG = '#3b2f26'
+const BRISTLE = '#1a1512'
 
-/** Wing beat in Hz when nothing is measured. Idle animation, not a claim. */
 const IDLE_HZ = 12
-
-const OMMATIDIA = 240
+const OMMATIDIA = 260
 
 /** Evenly distributed hexagonal facets over a forward-facing hemisphere. */
 function useOmmatidia(radius: number) {
@@ -36,24 +41,23 @@ function useOmmatidia(radius: number) {
       position: [number, number, number]
       rotation: [number, number, number]
     }[] = []
-
     for (let i = 0; i < OMMATIDIA; i++) {
       const y = 1 - (i / (OMMATIDIA - 1)) * 2
       const r = Math.sqrt(Math.max(0, 1 - y * y))
       const theta = golden * i
-
       const nx = Math.cos(theta) * r
       const nz = r * 0.55 + 0.45
       const ny = y
-
       if (nz < 0.42) continue
-      const length = Math.hypot(nx, ny, nz) || 1
-
+      const len = Math.hypot(nx, ny, nz) || 1
+      const px = (nx / len) * radius
+      const py = (ny / len) * radius
+      const pz = (nz / len) * radius
       out.push({
-        position: [(nx / length) * radius, (ny / length) * radius, (nz / length) * radius],
+        position: [px, py, pz],
         rotation: [
-          Math.atan2(Math.hypot(nx / length, ny / length), nz / length),
-          Math.atan2(nx / length, nz / length),
+          Math.atan2(Math.hypot(px, py), pz),
+          Math.atan2(px, pz),
           0,
         ],
       })
@@ -69,22 +73,22 @@ function CompoundEye({
   position: [number, number, number]
   scale: [number, number, number]
 }) {
-  const facets = useOmmatidia(0.083)
+  const facets = useOmmatidia(0.082)
   return (
     <group position={position} scale={scale}>
       <mesh>
-        <sphereGeometry args={[0.086, 24, 18]} />
-        <meshStandardMaterial color={EYE_DARK} roughness={0.42} metalness={0.05} />
+        <sphereGeometry args={[0.085, 24, 18]} />
+        <meshStandardMaterial color={EYE_DARK} roughness={0.4} metalness={0.06} />
       </mesh>
       {facets.map((f, i) => (
         <mesh key={i} position={f.position} rotation={f.rotation}>
-          <cylinderGeometry args={[0.0092, 0.0092, 0.008, 6]} />
+          <cylinderGeometry args={[0.0088, 0.0088, 0.008, 6]} />
           <meshStandardMaterial
             color={EYE}
-            roughness={0.3}
-            metalness={0.12}
+            roughness={0.28}
+            metalness={0.14}
             emissive={EYE_DARK}
-            emissiveIntensity={0.16}
+            emissiveIntensity={0.18}
           />
         </mesh>
       ))}
@@ -92,21 +96,39 @@ function CompoundEye({
   )
 }
 
-function WingVeins({ length, width }: { length: number; width: number }) {
-  const veins: { from: [number, number, number]; to: [number, number, number] }[] = []
-  for (const t of [-0.92, -0.52, -0.12, 0.28, 0.66]) {
-    veins.push({
-      from: [0, 0, -length * 0.48],
-      to: [t * width * 0.5, 0, length * 0.5],
+/** One wing: membrane plus longitudinal veins, cross-veins and two closed cells. */
+function Wing({ length, width }: { length: number; width: number }) {
+  const veins = useRef<THREE.Mesh[]>([])
+
+  const segments = (() => {
+    const out: { from: THREE.Vector3; to: THREE.Vector3 }[] = []
+    for (const t of [-0.9, -0.5, -0.1, 0.3, 0.68]) {
+      out.push({
+        from: new THREE.Vector3(0, 0, -length * 0.48),
+        to: new THREE.Vector3(t * width * 0.5, 0, length * 0.5),
+      })
+    }
+    for (const frac of [-0.08, 0.18, 0.42]) {
+      const z = -length * 0.48 + length * frac
+      out.push({
+        from: new THREE.Vector3(-width * 0.42, 0, z),
+        to: new THREE.Vector3(width * 0.34, 0, z + length * 0.05),
+      })
+    }
+    out.push({
+      from: new THREE.Vector3(width * 0.16, 0, length * 0.2),
+      to: new THREE.Vector3(width * 0.3, 0, length * 0.31),
     })
-  }
-  for (const frac of [-0.1, 0.16, 0.4]) {
-    const z = -length * 0.48 + length * frac
-    veins.push({ from: [-width * 0.42, 0, z], to: [width * 0.34, 0, z + length * 0.05] })
-  }
-  veins.push({ from: [width * 0.16, 0, length * 0.2], to: [width * 0.3, 0, length * 0.31] })
-  veins.push({ from: [width * 0.3, 0, length * 0.31], to: [width * 0.12, 0, length * 0.36] })
-  veins.push({ from: [width * 0.12, 0, length * 0.36], to: [width * 0.02, 0, length * 0.3] })
+    out.push({
+      from: new THREE.Vector3(width * 0.3, 0, length * 0.31),
+      to: new THREE.Vector3(width * 0.12, 0, length * 0.37),
+    })
+    out.push({
+      from: new THREE.Vector3(width * 0.12, 0, length * 0.37),
+      to: new THREE.Vector3(width * 0.02, 0, length * 0.3),
+    })
+    return out
+  })()
 
   return (
     <group>
@@ -115,34 +137,31 @@ function WingVeins({ length, width }: { length: number; width: number }) {
         <meshStandardMaterial
           color={WING}
           transparent
-          opacity={0.26}
-          side={2}
-          roughness={0.14}
-          metalness={0.04}
+          opacity={0.3}
+          side={THREE.DoubleSide}
+          roughness={0.12}
+          metalness={0.05}
         />
       </mesh>
-      {veins.map((v, i) => {
-        // Vein endpoints are authored in (x, y, z) with y as the wing's span axis; the membrane
-        // lies in the horizontal plane, so swap y and z into local coordinates here.
-        const fx = v.from[0]
-        const fy = v.from[2]
-        const fz = v.from[1]
-        const tx = v.to[0]
-        const ty = v.to[2]
-        const tz = v.to[1]
-        const mx = (fx + tx) / 2
-        const my = (fy + ty) / 2
-        const mz = (fz + tz) / 2
-        const dx = tx - fx
-        const dy = ty - fy
-        const dz = tz - fz
-        const len = Math.hypot(dx, dy, dz)
-        // Cylinders point along +Y by default; rotate +Y onto the vein direction.
-        const ry = Math.atan2(Math.hypot(dx, dz), dy)
-        const rz = Math.atan2(dx, dy)
+      {segments.map((s, i) => {
+        const mid = s.from.clone().add(s.to).multiplyScalar(0.5)
+        const dir = s.to.clone().sub(s.from)
+        const len = dir.length()
+        const quat = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          dir.clone().normalize(),
+        )
+        const euler = new THREE.Euler().setFromQuaternion(quat)
         return (
-          <mesh key={i} position={[mx, my, mz]} rotation={[0, ry, -rz]}>
-            <cylinderGeometry args={[0.0016, 0.0016, len, 4]} />
+          <mesh
+            key={i}
+            ref={(el) => {
+              if (el) veins.current[i] = el
+            }}
+            position={mid}
+            rotation={[euler.x, euler.y, euler.z]}
+          >
+            <cylinderGeometry args={[0.0014, 0.0014, len, 4]} />
             <meshStandardMaterial color={VEIN} roughness={0.7} />
           </mesh>
         )
@@ -151,126 +170,166 @@ function WingVeins({ length, width }: { length: number; width: number }) {
   )
 }
 
-function Leg({ z }: { z: number }) {
+/** One leg: coxa, thick femur, long thin tibia, five-segment tarsus, claws. */
+function Leg({ z, splay }: { z: number; splay: number }) {
   return (
-    <>
-      <mesh position={[-0.06, -0.1, z]} rotation={[0.4, 0, 0.7]}>
-        <cylinderGeometry args={[0.014, 0.013, 0.11, 6]} />
+    <group position={[0, -0.1, z]}>
+      <mesh position={[-0.07 * splay, -0.06, 0]} rotation={[0.5, 0, 0.8 * splay]}>
+        <cylinderGeometry args={[0.012, 0.011, 0.12, 6]} />
         <meshStandardMaterial color={LEG} roughness={0.85} />
       </mesh>
-      <mesh position={[-0.14, -0.15, z + 0.01]} rotation={[0.1, 0, -0.55]}>
-        <cylinderGeometry args={[0.026, 0.021, 0.15, 8]} />
+      <mesh position={[-0.17 * splay, -0.17, 0.01]} rotation={[0.1, 0, -0.5]}>
+        <cylinderGeometry args={[0.022, 0.017, 0.24, 8]} />
         <meshStandardMaterial color={LEG} roughness={0.8} />
       </mesh>
-      <mesh position={[-0.2, -0.24, z + 0.02]} rotation={[0.15, 0, -0.28]}>
-        <cylinderGeometry args={[0.011, 0.008, 0.17, 6]} />
+      <mesh position={[-0.28 * splay, -0.35, 0.02]} rotation={[0.15, 0, -0.22]}>
+        <cylinderGeometry args={[0.009, 0.006, 0.3, 6]} />
         <meshStandardMaterial color={LEG} roughness={0.85} />
       </mesh>
       {[0, 1, 2, 3, 4].map((seg) => (
         <mesh
           key={seg}
           position={[
-            -0.235 - seg * 0.008,
-            -0.325 - seg * 0.019,
-            z + 0.02 + seg * 0.004,
+            -0.31 * splay - seg * 0.006,
+            -0.5 - seg * 0.024,
+            0.02 + seg * 0.005,
           ]}
-          rotation={[0.1, 0, -0.1]}
+          rotation={[0.1, 0, -0.08]}
         >
-          <cylinderGeometry args={[0.009 - seg * 0.001, 0.008 - seg * 0.001, 0.021, 5]} />
+          <cylinderGeometry
+            args={[0.008 - seg * 0.0009, 0.007 - seg * 0.0009, 0.026, 5]}
+          />
           <meshStandardMaterial color={LEG} roughness={0.88} />
         </mesh>
       ))}
-      <mesh position={[-0.275, -0.425, z + 0.035]} rotation={[0.3, 0, -0.6]}>
-        <coneGeometry args={[0.006, 0.02, 5]} />
+      <mesh position={[-0.34 * splay, -0.63, 0.04]} rotation={[0.3, 0, -0.55]}>
+        <coneGeometry args={[0.005, 0.018, 5]} />
         <meshStandardMaterial color={VEIN} roughness={0.9} />
       </mesh>
-    </>
+    </group>
   )
 }
 
 interface SceneProps {
-  /** Measured spike rate in Hz, or null when unmeasured. */
   spikeHz: number | null
   saturated: boolean
-  /** True while the recorded stimulus plays. */
   playing: boolean
-  /** 0..1 progress through the stimulus sequence; drives disk size and distance. */
   progress: number
+  /** Live camera motion energy 0..1, or null when using the synthetic stimulus. */
+  liveMotion: number | null
 }
 
-export function FlyScene({ spikeHz, saturated, playing, progress }: SceneProps) {
+export function FlyScene({
+  spikeHz,
+  saturated,
+  playing,
+  progress,
+  liveMotion,
+}: SceneProps) {
   const leftWing = useRef<Group>(null)
   const rightWing = useRef<Group>(null)
   const brain = useRef<Mesh>(null)
   const disk = useRef<Mesh>(null)
-  const bodyRef = useRef<Group>(null)
+  const body = useRef<Group>(null)
+  const wings = useRef<Group>(null)
 
   const beatHz = spikeHz ?? IDLE_HZ
+  const usingCamera = liveMotion !== null
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const t = state.clock.elapsedTime
-    const gate = playing ? 1 : 0.3
-    const angle = Math.sin(t * beatHz * 2 * Math.PI) * 0.4 * gate
+    const gate = playing || usingCamera ? 1 : 0.3
+    const angle = Math.sin(t * beatHz * 2 * Math.PI) * 0.42 * gate
 
     if (leftWing.current) leftWing.current.rotation.z = angle
     if (rightWing.current) rightWing.current.rotation.z = -angle
 
     if (brain.current) {
-      const material = brain.current.material as MeshStandardMaterial
+      const m = brain.current.material as MeshStandardMaterial
       const pulse = 0.5 + 0.5 * Math.sin(t * 8)
-      material.emissiveIntensity = spikeHz === null ? 0.15 : 0.5 + pulse * 0.7
-      material.color.set(saturated ? '#991b1b' : '#38bdf8')
-      material.emissive.set(saturated ? '#991b1b' : '#38bdf8')
+      m.emissiveIntensity = spikeHz === null ? 0.15 : 0.5 + pulse * 0.7
+      m.color.set(saturated ? '#991b1b' : '#38bdf8')
+      m.emissive.set(saturated ? '#991b1b' : '#38bdf8')
     }
 
-    // The disk approaches as the sequence progresses: it grows and moves toward the fly.
-    // Parked it sits close enough to read as an object in the fly's field of view, and Start
-    // drives it away and back so the approach is visible.
     if (disk.current) {
-      const p = Math.max(0, Math.min(1, progress))
-      const parked = p <= 0 && !playing
-      // Parked: mid-distance and clearly visible, offset so it does not sit behind the fly.
-      // Playing: starts far and small, arrives close and centred in the field of view.
-      const distance = parked ? 0.95 : 1.5 - p * 1.05
-      const scale = parked ? 0.4 : 0.2 + p * 0.6
-      disk.current.scale.setScalar(scale)
-      disk.current.position.set(parked ? 0.62 : 0, 0, distance)
+      if (usingCamera) {
+        // Camera mode: the disk is hidden, because the real scene IS the stimulus.
+        disk.current.visible = false
+      } else {
+        disk.current.visible = true
+        const p = Math.max(0, Math.min(1, progress))
+        const parked = p <= 0 && !playing
+        // Held clear of the body AND on the side the fly is facing, so it reads as an object
+        // in front of the fly rather than behind it or attached to it. Parked is far and
+        // offset; playing approaches to sit directly ahead.
+        const distance = parked ? 1.0 : 1.5 - p * 0.7
+        const scale = parked ? 0.26 : 0.18 + p * 0.34
+        disk.current.scale.setScalar(scale)
+        disk.current.position.set(parked ? 1.35 : 1.0, 0.02, distance)
+      }
     }
 
-    // The fly holds position; a small idle bob keeps the scene alive when paused.
-    if (bodyRef.current) {
-      bodyRef.current.position.y = Math.sin(t * 1.6) * 0.012
-      void delta
+    if (body.current) {
+      body.current.position.y = Math.sin(t * 1.5) * 0.01
+    }
+
+    // A whole-body twitch with the same drive as the wings, so the animal reads as alive.
+    if (wings.current) {
+      wings.current.rotation.z = Math.sin(t * beatHz * Math.PI) * 0.03 * gate
     }
   })
 
+  // Five banded abdominal segments, tapering — the long body that makes it read as a fly.
+  const abdomen = [
+    { z: -0.06, r: 0.155, c: ABDOMEN_A },
+    { z: -0.28, r: 0.146, c: ABDOMEN_B },
+    { z: -0.47, r: 0.126, c: ABDOMEN_A },
+    { z: -0.63, r: 0.102, c: ABDOMEN_C },
+    { z: -0.76, r: 0.072, c: ABDOMEN_B },
+  ]
+
+  const bristlePositions: { p: [number, number, number]; r: [number, number, number] }[] = []
+  for (let i = 0; i < 34; i++) {
+    const t = i / 33
+    const z = 0.32 - t * 1.0
+    const side = i % 2 === 0 ? 1 : -1
+    const tilt = 0.85 + ((i * 2.399) % 1) * 0.55
+    bristlePositions.push({
+      p: [side * 0.08, 0.11 + (i % 3) * 0.022, z],
+      r: [0, 0, side * tilt],
+    })
+  }
+
   return (
     <group>
-      {/* The stimulus: an approaching dark disk, in the fly's field of view. */}
-      <mesh ref={disk} position={[0, 0, 0.75]}>
+      {/* The stimulus: an approaching dark disk, ahead of the fly's head. */}
+      <mesh ref={disk} position={[1.35, 0.02, 1.0]}>
         <circleGeometry args={[0.5, 48]} />
         <meshStandardMaterial
-          color="#111827"
-          emissive="#1e293b"
-          emissiveIntensity={0.4}
+          color="#0f172a"
+          emissive="#334155"
+          emissiveIntensity={0.55}
           roughness={0.9}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* The fly, side-on to the camera and facing the disk. A head-on fly hid the disk
-          behind its own eyes; three-quarter view keeps the body, wings and the approaching
-          object all readable at once. */}
-      <group ref={bodyRef} rotation={[0.1, -2.35, 0.06]} scale={1.95}>
-        <mesh position={[0, 0, 0.56]} scale={[1, 0.88, 0.9]}>
-          <sphereGeometry args={[0.13, 24, 18]} />
-          <meshStandardMaterial color={THORAX} roughness={0.75} />
+      {/* The fly, turned so its head faces the stimulus disk at +X. */}
+      <group ref={body} rotation={[0.08, 2.42, 0.05]} scale={2.15}>
+        {/* Head */}
+        <mesh position={[0, 0.01, 0.6]} scale={[0.92, 0.9, 0.95]}>
+          <sphereGeometry args={[0.115, 24, 18]} />
+          <meshStandardMaterial color={HEAD} roughness={0.75} />
         </mesh>
 
-        <CompoundEye position={[-0.082, 0.038, 0.585]} scale={[0.82, 1, 0.95]} />
-        <CompoundEye position={[0.082, 0.038, 0.585]} scale={[0.82, 1, 0.95]} />
+        {/* Compound eyes */}
+        <CompoundEye position={[-0.072, 0.035, 0.63]} scale={[0.78, 1, 0.95]} />
+        <CompoundEye position={[0.072, 0.035, 0.63]} scale={[0.78, 1, 0.95]} />
 
-        <mesh ref={brain} position={[0, -0.03, 0.55]}>
-          <sphereGeometry args={[0.062, 20, 14]} />
+        {/* Brain, between and below the eyes where it anatomically lies. */}
+        <mesh ref={brain} position={[0, -0.028, 0.59]}>
+          <sphereGeometry args={[0.055, 20, 14]} />
           <meshStandardMaterial
             color="#38bdf8"
             emissive="#38bdf8"
@@ -279,61 +338,68 @@ export function FlyScene({ spikeHz, saturated, playing, progress }: SceneProps) 
           />
         </mesh>
 
-        <mesh position={[0, 0, 0.2]} scale={[1, 0.94, 1.05]}>
-          <sphereGeometry args={[0.2, 28, 20]} />
+        {/* Thorax: heavy, wing-bearing, the biggest single segment. */}
+        <mesh position={[0, 0, 0.22]} scale={[0.98, 0.92, 1.08]}>
+          <sphereGeometry args={[0.185, 28, 20]} />
           <meshStandardMaterial color={THORAX} roughness={0.72} />
         </mesh>
 
-        {[
-          { z: 0.0, r: 0.158 },
-          { z: -0.15, r: 0.146 },
-          { z: -0.285, r: 0.124 },
-          { z: -0.395, r: 0.094 },
-        ].map((seg, i) => (
-          <mesh key={seg.z} position={[0, -0.008, seg.z]} scale={[1, 0.9, 1]}>
+        {/* Long banded abdomen */}
+        {abdomen.map((seg) => (
+          <mesh key={seg.z} position={[0, -0.012, seg.z]} scale={[1, 0.88, 1.12]}>
             <sphereGeometry args={[seg.r, 24, 18]} />
-            <meshStandardMaterial
-              color={i % 2 === 0 ? ABDOMEN : ABDOMEN_BAND}
-              roughness={0.78}
-            />
+            <meshStandardMaterial color={seg.c} roughness={0.76} />
           </mesh>
         ))}
 
-        <group ref={leftWing} position={[0.06, 0.13, 0.18]}>
-          <group position={[-0.3, 0, -0.12]}>
-            <WingVeins length={0.62} width={0.2} />
-          </group>
-          <group position={[-0.21, -0.012, -0.28]}>
-            <WingVeins length={0.44} width={0.14} />
-          </group>
-        </group>
-
-        <group ref={rightWing} position={[-0.06, 0.13, 0.18]}>
-          <group position={[0.3, 0, -0.12]}>
-            <WingVeins length={0.62} width={0.2} />
-          </group>
-          <group position={[0.21, -0.012, -0.28]}>
-            <WingVeins length={0.44} width={0.14} />
-          </group>
-        </group>
-
-        {[0.28, 0.17, 0.06].map((z) => (
-          <group key={z}>
-            <group scale={[-1, 1, 1]}>
-              <Leg z={z} />
+        {/* Wings: two pairs, swept back over the abdomen. */}
+        <group ref={wings}>
+          <group ref={leftWing} position={[0.055, 0.125, 0.2]}>
+            <group position={[-0.32, 0, -0.16]}>
+              <Wing length={0.72} width={0.22} />
             </group>
-            <Leg z={z} />
+            <group position={[-0.24, -0.014, -0.34]}>
+              <Wing length={0.5} width={0.15} />
+            </group>
           </group>
+
+          <group ref={rightWing} position={[-0.055, 0.125, 0.2]}>
+            <group position={[0.32, 0, -0.16]}>
+              <Wing length={0.72} width={0.22} />
+            </group>
+            <group position={[0.24, -0.014, -0.34]}>
+              <Wing length={0.5} width={0.15} />
+            </group>
+          </group>
+        </group>
+
+        {/* Six long legs, three per side */}
+          {[0.3, 0.19, 0.08].map((z) => (
+            <group key={z}>
+              <group scale={[-1, 1, 1]}>
+                <Leg z={z} splay={1} />
+              </group>
+              <Leg z={z} splay={1} />
+            </group>
+          ))}
+
+        {/* Bristles along thorax and abdomen */}
+        {bristlePositions.map((b, i) => (
+          <mesh key={i} position={b.p} rotation={b.r}>
+            <cylinderGeometry args={[0.0016, 0.0007, 0.07, 3]} />
+            <meshStandardMaterial color={BRISTLE} roughness={0.95} />
+          </mesh>
         ))}
 
+        {/* Antennae with flagella */}
         {[-1, 1].map((side) => (
-          <group key={side} position={[side * 0.05, 0.11, 0.66]}>
-            <mesh rotation={[1.2, 0, side * 0.28]}>
-              <cylinderGeometry args={[0.006, 0.0035, 0.2, 5]} />
+          <group key={side} position={[side * 0.045, 0.1, 0.69]}>
+            <mesh rotation={[1.25, 0, side * 0.26]}>
+              <cylinderGeometry args={[0.0055, 0.0032, 0.2, 5]} />
               <meshStandardMaterial color={LEG} roughness={0.85} />
             </mesh>
-            <mesh position={[side * 0.02, 0.08, 0.06]} rotation={[1.35, 0, side * 0.5]}>
-              <cylinderGeometry args={[0.005, 0.002, 0.1, 5]} />
+            <mesh position={[side * 0.022, 0.085, 0.06]} rotation={[1.4, 0, side * 0.5]}>
+              <cylinderGeometry args={[0.0045, 0.0018, 0.1, 5]} />
               <meshStandardMaterial color={LEG} roughness={0.85} />
             </mesh>
           </group>

@@ -2,9 +2,10 @@ import { lazy, Suspense } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import type { ExperimentState } from '@/lib/experiment'
+import type { FeedSource } from '@/lib/useCamera'
 
 /**
- * Hosts the 3D scene. The fly, the approaching disk and the brain glow are lazily loaded so
+ * Hosts the 3D scene. The fly, the stimulus disk and the brain glow are lazily loaded so
  * three.js stays out of the initial bundle.
  */
 const FlyScene = lazy(() =>
@@ -17,25 +18,30 @@ export function SceneView({
   state,
   playing,
   progress,
+  source = 'synthetic',
+  liveMotion = null,
 }: {
   state: ExperimentState
   playing: boolean
   progress: number
+  source?: FeedSource
+  liveMotion?: number | null
 }) {
   const rate = state.giantFiber?.rateHz ?? null
   const saturated = state.giantFiber?.saturated ?? false
+  const cameraMode = source === 'camera' && liveMotion !== null
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-[#0a0c11]">
       <Suspense
         fallback={
-          <div className="flex h-[460px] items-center justify-center font-mono text-xs text-ink-faint">
+          <div className="flex h-[420px] items-center justify-center font-mono text-xs text-ink-faint">
             loading…
           </div>
         }
       >
         <Canvas
-          camera={{ position: [0, 0.35, 2.4], fov: 42 }}
+          camera={{ position: [0.35, 0.3, 3.2], fov: 44 }}
           dpr={[1, 1.75]}
           gl={{ antialias: true }}
         >
@@ -48,14 +54,16 @@ export function SceneView({
             saturated={saturated}
             playing={playing}
             progress={progress}
+            liveMotion={cameraMode ? liveMotion : null}
           />
         </Canvas>
       </Suspense>
 
-      {/* In-scene annotation, the minimum needed to read the picture. */}
+      {/* Minimal in-scene annotation. The picture carries the meaning; this only names the
+          two objects so neither is mistaken for part of the fly. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-3">
         <span className="font-mono text-xs text-ink-faint">
-          approaching object
+          {cameraMode ? 'camera feed (live)' : 'approaching disk'}
         </span>
         <div className="flex flex-col items-end gap-1">
           {saturated && <Badge tone="danger">saturated</Badge>}
@@ -66,9 +74,15 @@ export function SceneView({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-3">
-        <span className="font-mono text-xs text-ink-faint">fly</span>
         <span className="font-mono text-xs text-ink-faint">
-          {playing ? 'replaying stimulus' : 'press start'}
+          fly · dorsal nerve cord
+        </span>
+        <span className="font-mono text-xs text-ink-faint">
+          {cameraMode
+            ? 'motion ' + (liveMotion ?? 0).toFixed(3)
+            : playing
+              ? 'replaying'
+              : 'press start'}
         </span>
       </div>
     </div>

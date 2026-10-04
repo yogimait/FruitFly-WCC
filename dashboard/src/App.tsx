@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { REFERENCE } from '@/lib/experiment'
+import { CameraToggle, useCamera, type FeedSource } from '@/lib/useCamera'
 import { useExperimentState } from '@/lib/useExperiment'
 import { usePlayback } from '@/lib/usePlayback'
 
@@ -18,11 +19,14 @@ const FRAME_MS = 667
 export default function App() {
   const state = useExperimentState()
   const [showData, setShowData] = useState(false)
+  const [source, setSource] = useState<FeedSource>('synthetic')
   const playback = usePlayback(STIMULUS_FRAMES, FRAME_MS)
+  const camera = useCamera(source)
   const playing = playback.state === 'running'
 
   const gf = state.giantFiber
   const invariant = state.findings?.verdict?.magnitude_invariant
+  const cameraLive = source === 'camera' && camera.status === 'live'
 
   return (
     <div className="min-h-svh bg-background">
@@ -36,13 +40,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={playback.start}>
+            <Button size="sm" onClick={playback.start} disabled={cameraLive}>
               {playing ? 'Running…' : 'Start'}
             </Button>
-            <Button size="sm" variant="outline" onClick={playback.step}>
+            <Button size="sm" variant="outline" onClick={playback.step} disabled={cameraLive}>
               Step
             </Button>
-            <Button size="sm" variant="outline" onClick={playback.stop}>
+            <Button size="sm" variant="outline" onClick={playback.stop} disabled={cameraLive}>
               Stop
             </Button>
           </div>
@@ -50,20 +54,51 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-4 px-6 py-6">
-        <SceneView state={state} playing={playing} progress={playback.progress} />
+        <SceneView
+          state={state}
+          playing={playing}
+          progress={playback.progress}
+          source={source}
+          liveMotion={cameraLive ? camera.motion : null}
+        />
+
+        {/* Hidden until the camera is on; the browser requires a real element to attach to. */}
+        <video
+          ref={camera.videoRef}
+          className="hidden"
+          playsInline
+          muted
+          aria-hidden="true"
+        />
+        <canvas ref={camera.canvasRef} className="hidden" width={8} height={8} aria-hidden="true" />
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CameraToggle
+            source={source}
+            onChange={(next) => {
+              setSource(next)
+              if (next === 'synthetic') camera.stop()
+            }}
+            status={camera.status}
+            onStart={camera.start}
+          />
+          {cameraLive && (
+            <span className="font-mono text-xs text-ink-faint">
+              live stimulus, recorded measurement
+            </span>
+          )}
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="sm:col-span-1">
+          <Card>
             <p className="font-mono text-xs text-ink-faint">response</p>
-            <p className="mt-1 font-mono text-2xl text-spike">
-              {gf ? `${gf.spikeCount}` : '—'}
-            </p>
+            <p className="mt-1 font-mono text-2xl text-spike">{gf ? `${gf.spikeCount}` : '—'}</p>
             <p className="font-mono text-xs text-ink-faint">
               {gf ? `${gf.rateHz?.toFixed(0)} Hz` : 'not measured'}
             </p>
           </Card>
 
-          <Card className="sm:col-span-1">
+          <Card>
             <p className="font-mono text-xs text-ink-faint">first spike</p>
             <p className="mt-1 font-mono text-2xl text-spike">
               {gf?.firstSpikeMs ? `${gf.firstSpikeMs.toFixed(2)} ms` : '—'}
@@ -73,7 +108,7 @@ export default function App() {
             </p>
           </Card>
 
-          <Card className="sm:col-span-1">
+          <Card>
             <p className="font-mono text-xs text-ink-faint">input driven</p>
             <p className="mt-1 font-mono text-2xl text-spike">67–6,719</p>
             <p className="font-mono text-xs text-ink-faint">same response</p>
@@ -102,22 +137,16 @@ export default function App() {
               <ul className="mt-2 space-y-1 font-mono text-xs text-ink-muted">
                 <li>19 ms escape latency — Ache et al. 2019, Curr Biol</li>
                 <li>42° looming size threshold — von Reyn et al. 2017</li>
-                <li>
-                  97.5% giant-fiber input from LPLC2 + LC4 — PLOS Biol 2025
-                </li>
+                <li>97.5% giant-fiber input from LPLC2 + LC4 — PLOS Biol 2025</li>
                 <li>MaleCNS v1.0 connectome; LIF constants — Shiu et al. 2024</li>
               </ul>
             </Card>
           </div>
         )}
 
-        {state.serverError && (
-          <p className="font-mono text-xs text-danger">{state.serverError}</p>
-        )}
-
         <p className="pb-6 text-xs text-ink-faint">
-          Simulated from a published connectome. Nothing is trained. Measured offline and served
-          as data.
+          Simulated from a published connectome. Nothing is trained. The stimulus can be live;
+          the measurement is recorded and served as data.
         </p>
       </main>
     </div>
