@@ -169,6 +169,78 @@ Not run yet, and ordered by expected value:
    reported side by side. This is the comparison the project claims to make and has not yet
    made cleanly.
 
+## Experiment 4: what actually drives DNp01? **The design is confounded.**
+
+**Question.** Is the recurrent loop the cause of the flat readouts? Ablate it and see.
+
+**Harness.** `scripts/ablate_recurrence.py` → `data/ablation.json`
+`scripts/what_drives_dnp01.py` → `data/dnp01-drivers.json`
+
+### Structural attribution: the model is faithful
+
+Measured signed-weight share of input to DNp01, against the published figures:
+
+| Presynaptic type | Published | This model |
+|---|---|---|
+| LPLC2 | 52.2% | **41.4%** |
+| LC4 | 45.2% | **54.2%** |
+| other | 2.6% | 4.4% |
+
+336 incoming edges, 332 excitatory. The connectome reproduces the published attribution of
+giant-fiber visual input reasonably well. **This part of the model is trustworthy.**
+
+### Causal attribution: the readout does not depend on that input
+
+Silencing each candidate by removing all its *incoming* edges, then re-measuring DNp01 at 42°:
+
+| Condition | DNp01 spikes | Network spikes |
+|---|---|---|
+| Control | 82 | 811,273 |
+| LPLC2 input removed | 82 | 743,153 |
+| LC4 input removed | 82 | 798,895 |
+| **LPLC2 + LC4 input removed** | **82** | 725,057 |
+
+Removing 97.5% of the published visual input to the giant fiber changes its output by **zero
+spikes**, while the network total clearly changes. The ablation works; DNp01 is indifferent to it.
+
+### The confound: LPLC2 is used as an input port, not as a neuron
+
+`simulate_spike_train` delivers external spikes through the weight matrix the same way it
+delivers internal ones — by summing `W[spiking_neurons, :]`. Injecting "drive at LPLC2" therefore
+means: *pretend an LPLC2 neuron fired, and propagate along LPLC2's outgoing edges.*
+
+So the injected drive enters the network **as if from** LPLC2 without ever requiring LPLC2 to
+reach threshold. LPLC2's own membrane state is never in the causal path. That is exactly why:
+
+- removing LPLC2's incoming edges changed nothing (the drive does not use them)
+- LPLC2 recruitment was flat at 185 in every arm (the network self-sustains downstream)
+- latency was floored at the synaptic delay (DNp01 fires from propagated network activity)
+
+**This invalidates the interpretation of experiments 2 and 3.** Those measured the network's
+response to a synthetic input port, not LPLC2's response to a stimulus. The null results are
+still real measurements, but they do not test the hypothesis they were written to test.
+
+Also confirms DNp01 is **not** free-running: with zero external stimulus the whole network is
+silent (0 spikes, 250 ms window). It fires only when driven — just not by the pathway we thought.
+
+### What has to change before the hypothesis can be tested
+
+1. **Drive upstream of LPLC2**, through the lobula plate (13,595 units) or the full lobula
+   columnar, so LPLC2's membrane state is genuinely in the causal path.
+2. **Assert LPLC2 is in the path.** Before any measurement, silence LPLC2 and require the
+   downstream response to change. If it does not, the experiment is not measuring LPLC2 and
+   should abort rather than report a number. This check is cheap and it should have been the
+   first thing written.
+3. Then repeat the timing-versus-rate comparison.
+
+### A third false positive in our own analysis
+
+The ablation script's verdict logic compared each arm's readouts for distinctness in isolation
+and reported `information_restored = True`. Arm 1's DNp01 values (85/82/75) are **identical to
+the control** — the grading was present before the ablation and was not caused by it. The logic
+needed to compare against control, not against absolute distinctness. Third instance of the same
+class of error as experiments 3 and the luminance renderer; all three are recorded.
+
 ## Corrections log
 
 Recording mistakes found by measurement rather than by reading, because each one would have
@@ -182,5 +254,7 @@ produced a plausible but wrong claim:
 | Luminance renderer assigned the field twice, producing a *bright* disk of uniform value | Zero contrast existed; every cell fired at the same step, so timing was flat | Rewrite with single clean occupancy-based darkening and a one-cell soft edge |
 | Transient separating-bin test keyed on `spread > 0` | A 0-or-185 step function was reported as a graded positive result | Require every size to yield a distinct count; densify bins to 2 ms |
 | Latency measured from window start | Confounded stimulus size with stimulus duration, since frame interval scales with peak size | Measure from the first drive event |
+| Ablation verdict compared arms in isolation, not against control | Arm 1's values were identical to control yet reported "information restored = True" | A positive ablation result must be a *change relative to control* |
+| "Drive LPLC2" injected drive through LPLC2's outgoing edges | LPLC2's membrane state was never in the causal path, so experiments 2–3 measured the network's response to an input port rather than LPLC2's response | Drive upstream of LPLC2, and assert LPLC2 is in the causal path before measuring |
 
 Related: [[Home]] · [[Architecture]] · [[Biological-Reference]] · [[Roadmap]]

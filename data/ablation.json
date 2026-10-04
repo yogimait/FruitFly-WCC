@@ -1,0 +1,301 @@
+{
+  "config": {
+    "window_ms": 250.0,
+    "frames": 16,
+    "velocity_deg_per_s": 400.0,
+    "lplc2_neurons": 185,
+    "edges_control": 829322,
+    "edges_feedforward": 776062,
+    "edges_no_self_loops": 808952
+  },
+  "arms": {
+    "0_control": {
+      "description": "unchanged weights",
+      "rows": [
+        {
+          "input_events": 4,
+          "input_neurons": 4,
+          "lplc2_recruited": 185,
+          "lplc2_spikes": 15554,
+          "lplc2_rate_hz": 336.3,
+          "dnp01_first_spike_ms": 39.0,
+          "dnp01_spikes": 85,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 10.0,
+          "cells_driven": 4
+        },
+        {
+          "input_events": 12,
+          "input_neurons": 12,
+          "lplc2_recruited": 185,
+          "lplc2_spikes": 15163,
+          "lplc2_rate_hz": 327.85,
+          "dnp01_first_spike_ms": 45.0,
+          "dnp01_spikes": 82,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 42.0,
+          "cells_driven": 12
+        },
+        {
+          "input_events": 32,
+          "input_neurons": 32,
+          "lplc2_recruited": 185,
+          "lplc2_spikes": 13875,
+          "lplc2_rate_hz": 300.0,
+          "dnp01_first_spike_ms": 62.5,
+          "dnp01_spikes": 75,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 80.0,
+          "cells_driven": 32
+        }
+      ],
+      "recruitment_graded": false,
+      "lplc2_spikes_graded": true,
+      "dnp01_spikes_graded": true,
+      "latency_graded": true,
+      "recruitment_values": [
+        185,
+        185,
+        185
+      ],
+      "lplc2_spikes_values": [
+        15554,
+        15163,
+        13875
+      ],
+      "dnp01_spikes_values": [
+        85,
+        82,
+        75
+      ]
+    },
+    "1_feedforward": {
+      "description": "all incoming edges to LPLC2 removed",
+      "rows": [
+        {
+          "input_events": 4,
+          "input_neurons": 4,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 39.0,
+          "dnp01_spikes": 85,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 10.0,
+          "cells_driven": 4
+        },
+        {
+          "input_events": 12,
+          "input_neurons": 12,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 45.0,
+          "dnp01_spikes": 82,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 42.0,
+          "cells_driven": 12
+        },
+        {
+          "input_events": 32,
+          "input_neurons": 32,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 62.5,
+          "dnp01_spikes": 75,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 80.0,
+          "cells_driven": 32
+        }
+      ],
+      "recruitment_graded": false,
+      "lplc2_spikes_graded": false,
+      "dnp01_spikes_graded": true,
+      "latency_graded": true,
+      "recruitment_values": [
+        0,
+        0,
+        0
+      ],
+      "lplc2_spikes_values": [
+        0,
+        0,
+        0
+      ],
+      "dnp01_spikes_values": [
+        85,
+        82,
+        75
+      ]
+    },
+    "2_no_self_loops": {
+      "description": "LPLC2 -> LPLC2 edges removed only",
+      "rows": [
+        {
+          "input_events": 4,
+          "input_neurons": 4,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": null,
+          "dnp01_spikes": 0,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 10.0,
+          "cells_driven": 4
+        },
+        {
+          "input_events": 12,
+          "input_neurons": 12,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": null,
+          "dnp01_spikes": 0,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 42.0,
+          "cells_driven": 12
+        },
+        {
+          "input_events": 32,
+          "input_neurons": 32,
+          "lplc2_recruited": 0,
+          "lplc2_spikes": 0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": null,
+          "dnp01_spikes": 0,
+          "dnp01_ceiling": 100,
+          "saturated": false,
+          "angular_size_deg": 80.0,
+          "cells_driven": 32
+        }
+      ],
+      "recruitment_graded": false,
+      "lplc2_spikes_graded": false,
+      "dnp01_spikes_graded": false,
+      "latency_graded": false,
+      "recruitment_values": [
+        0,
+        0,
+        0
+      ],
+      "lplc2_spikes_values": [
+        0,
+        0,
+        0
+      ],
+      "dnp01_spikes_values": [
+        0,
+        0,
+        0
+      ]
+    },
+    "3_rate_vs_timing": {
+      "description": "feed-forward model, same total input, rate spread vs single timed spike",
+      "rows": [
+        {
+          "angular_size_deg": 10.0,
+          "encoding": "rate",
+          "input_events": 4,
+          "mean_rate_hz": 16.0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 7.5,
+          "dnp01_spikes": 97,
+          "saturated": false
+        },
+        {
+          "angular_size_deg": 42.0,
+          "encoding": "rate",
+          "input_events": 12,
+          "mean_rate_hz": 48.0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 3.5,
+          "dnp01_spikes": 99,
+          "saturated": true
+        },
+        {
+          "angular_size_deg": 80.0,
+          "encoding": "rate",
+          "input_events": 32,
+          "mean_rate_hz": 128.0,
+          "lplc2_rate_hz": 0.0,
+          "dnp01_first_spike_ms": 3.0,
+          "dnp01_spikes": 99,
+          "saturated": true
+        }
+      ],
+      "timing_graded": false,
+      "rate_graded": false,
+      "timing_values": [],
+      "rate_values": [
+        97,
+        99,
+        99
+      ]
+    }
+  },
+  "seed_trials": [
+    {
+      "input_events": 12,
+      "input_neurons": 12,
+      "lplc2_recruited": 0,
+      "lplc2_spikes": 0,
+      "lplc2_rate_hz": 0.0,
+      "dnp01_first_spike_ms": 45.0,
+      "dnp01_spikes": 82,
+      "dnp01_ceiling": 100,
+      "saturated": false
+    },
+    {
+      "input_events": 12,
+      "input_neurons": 12,
+      "lplc2_recruited": 0,
+      "lplc2_spikes": 0,
+      "lplc2_rate_hz": 0.0,
+      "dnp01_first_spike_ms": 45.0,
+      "dnp01_spikes": 82,
+      "dnp01_ceiling": 100,
+      "saturated": false
+    },
+    {
+      "input_events": 12,
+      "input_neurons": 12,
+      "lplc2_recruited": 0,
+      "lplc2_spikes": 0,
+      "lplc2_rate_hz": 0.0,
+      "dnp01_first_spike_ms": 45.0,
+      "dnp01_spikes": 82,
+      "dnp01_ceiling": 100,
+      "saturated": false
+    }
+  ],
+  "seed_lplc2_spread": 0,
+  "changes_vs_control": {
+    "1_feedforward": {
+      "lplc2_recruited": true,
+      "lplc2_spikes": true,
+      "dnp01_spikes": false,
+      "dnp01_first_spike_ms": false
+    },
+    "2_no_self_loops": {
+      "lplc2_recruited": true,
+      "lplc2_spikes": true,
+      "dnp01_spikes": true,
+      "dnp01_first_spike_ms": true
+    }
+  },
+  "verdict": {
+    "information_restored_without_recurrence": true,
+    "lplc2_in_causal_path": true,
+    "rate_beats_timing": false,
+    "timing_beats_rate": false
+  }
+}

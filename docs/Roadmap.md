@@ -11,6 +11,22 @@ Core pipeline code is deliberately absent — organiser Rule 1.
 - [x] Disclosure skeleton — `DISCLOSURE.md`
 - [x] React dashboard scaffold, builds clean, dev server verified
 
+## Blocking issue — must be fixed before further experiments
+
+Experiment 4 found that the simulator delivers external drive along the driven neuron's
+**outgoing** edges. Injecting drive at LPLC2's matrix position therefore never places LPLC2's
+membrane state in the causal path, so experiments 2–4 measured the network's response to a
+synthetic input port rather than LPLC2's response to a stimulus.
+
+Two changes, in this order, and the second is a guard that should have existed from the start:
+
+1. **Drive upstream of LPLC2** — through the lobula plate (13,595 units) or the full lobula
+   columnar — so LPLC2 must actually fire for the signal to reach DNp01.
+2. **Assert LPLC2 is in the causal path before measuring.** Silence LPLC2 and require the
+   downstream response to change. If it does not, abort rather than report a number.
+
+Until both are in place, treat experiments 2–4 as method development, not as results.
+
 ## In-window plan, roughly 10 hours
 
 Hours are build time, not wall clock. The event runs 30 hours; the work fits in ten.

@@ -44,13 +44,24 @@ Descending-neuron rates saturate near 400 Hz and quantize at 1.67 Hz, giving ~0�
 | `scripts/neural_core.py` | `pending` | Frozen LIF dynamics with deterministic spike-train input. Imports constants from the source project rather than copying them, so they cannot silently diverge. Self-check asserts the pathway exists and that unstimulated networks stay silent. |
 | `scripts/measure_response_surface.py` | `pending` | Experiment 1. Sweeps drive sparsity, onset and window length. Writes `data/response-surface.json`. |
 | `scripts/probe_response.py` | `pending` | Interactive probe used to find the unescaped regime. Measurement only, no assertions. |
-| `scripts/inspect_subset.py` | `pending` | Read-only inspection of constants and the LPLC2→DNp01 subset. |
-| `data/response-surface.json` | `pending` | 24 measured configurations. |
-| `docs/Experiments.md` | `pending` | Experiment log, including three corrections made by measurement rather than by reading. |
+| `scripts/looming.py` | `pending` | Contrast-onset encoder. Analytic looming-disk renderer. Self-check `--test`. |
+| `scripts/measure_latency.py` | `pending` | Experiment 2. DNp01 latency and LPLC2 recruitment across stimulus size. |
+| `scripts/measure_transient.py` | `pending` | Experiment 3. Cumulative LPLC2 recruitment by time bin at 2 ms resolution. |
+| `scripts/ablate_recurrence.py` | `pending` | Experiment 4. Four arms: control, feed-forward, no self-loops, rate-vs-timing matched. |
+| `scripts/what_drives_dnp01.py` | `pending` | Structural and causal attribution of input to DNp01 against the published 52.2% / 45.2%. |
+| `scripts/inspect_subset.py`, `scripts/inspect_lplc2.py` | `pending` | Read-only inspection of constants, subset and LPLC2 metadata. |
+| `data/*.json` | `pending` | 5 measured datasets: response surface, latency sweep, transient, ablation, DNp01 drivers. |
+| `docs/Experiments.md` | `pending` | Experiment log, including four corrections made by measurement rather than by reading. |
 
 **Modified from source:** none. `neural_core.py` reimplements the delivery loop to accept
 timed input; the constants (`DT`, `V_REST`, `V_RESET`, `V_TH`, `DECAY_M`, `DECAY_SYN`,
 `REFRACT_STEPS`, `DELAY_STEPS`) are imported from `lif_escape.py`, not duplicated.
+
+**Known methodological limitation, discovered in-window and not yet fixed:** the simulator
+delivers external drive along the driven neuron's *outgoing* edges, so injecting drive at
+LPLC2's matrix position does not place LPLC2's membrane state in the causal path. Experiments
+2–4 therefore measure the network's response to a synthetic input port rather than LPLC2's
+response to a stimulus. See `docs/Experiments.md` §Experiment 4.
 
 ## Pre-event scaffolding (commit `a7fd1dc`, `caa36b8`)
 

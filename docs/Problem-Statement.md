@@ -27,15 +27,24 @@ A measurement harness. It drives the real LPLC2 → DNp01 pathway from the MaleC
 
 We are not claiming a product. We are testing whether a published, connectome-accurate spiking model reproduces a published physiological result, and reporting what happens either way.
 
-**The hypothesis was refuted, and that is now the finding.** We set out to show that spike
-timing carries stimulus information that spike rate loses. Three independent readouts —
-first-spike latency, steady-state recruitment, and transient recruitment — all came back flat
-across stimulus sizes 10°–80°. The lobula columnar pool is recurrently self-sustained: it
-reaches its full state in about 2 ms regardless of how much input arrives, so the encoding
-choice makes no difference downstream. Full data in [[Experiments]] §Verdict.
+**The hypothesis has not been tested yet, and that is now the finding.** We set out to show
+that spike timing carries stimulus information that spike rate loses. What we found instead is
+that our own experiment was confounded: injecting drive at LPLC2's matrix position propagates
+along LPLC2's outgoing edges without ever requiring LPLC2 to spike, so we were measuring the
+network's response to a synthetic input port, not LPLC2's response to a stimulus. Silencing
+LPLC2 *and* LC4 — 97.5% of the published visual input to the giant fiber — changes the DNp01
+output by zero spikes. See [[Experiments]] §Experiment 4.
 
-The contribution is therefore not "temporal coding works". It is **we identified precisely
-where the stimulus information is destroyed in this model, and we can show it.**
+Two findings survive and are worth keeping:
+
+- **The connectome is structurally faithful.** Signed-weight attribution of DNp01 input is
+  LPLC2 41.4% / LC4 54.2%, against the published 52.2% / 45.2%.
+- **DNp01 is not free-running.** With zero stimulus the whole network is silent. It fires only
+  when driven — just not by the pathway we thought.
+
+The contribution is therefore: **a negative result, a positive structural validation, and a
+diagnosed flaw in our own method.** Fixing the confound is the next step, and it is one change:
+drive upstream of LPLC2 and assert it is in the causal path before measuring.
 
 ## Who it is for
 
@@ -49,14 +58,15 @@ Two honest answers, not one flattering one:
 Stated up front so nothing is discovered on stage (`AGENTS.md` §6).
 
 **We claim:**
-- A connectome-accurate spiking model can be driven by stimulus timing and its output measured against real electrophysiology.
-- Neuron selection is justified by published anatomy, not by an arbitrary threshold: the backward-from-output rule and the empirical anatomy agree independently.
-- **The recurrent lobula columnar pool destroys stimulus magnitude information at every readable timescale in this model**, measured across three independent readouts.
-- Results are reported as measured, including when they fail the pre-registered checks. Two of our own analyses produced false positives before being corrected; both are recorded in [[Experiments]] §Corrections log.
+- The connectome is structurally faithful: signed-weight attribution of DNp01 input is LPLC2 41.4% / LC4 54.2% against the published 52.2% / 45.2%.
+- DNp01 is not free-running: the network is silent without external drive.
+- **Our own experiment was confounded, and the confound is diagnosed**: drive injected at LPLC2's matrix position never places LPLC2's membrane state in the causal path.
+- Results are reported as measured, including when they fail the pre-registered checks. **Three of our own analyses produced false positives before being corrected**; all are recorded in [[Experiments]] §Corrections log.
 
 **We do not claim:**
-- **Not that temporal coding works.** It did not, in this pathway at this scale. See [[Experiments]] §Verdict.
-- **Not that the published 19 ms is wrong.** This model cannot resolve the stimulus through this pathway. That is a statement about the readout, not about the biology.
+- **Not that temporal coding works, or that it fails.** It was never tested. Experiments 2–3 measured the network's response to a synthetic input port.
+- **Not that the recurrent pool is the cause.** That diagnosis is incomplete; the ablation that appeared to confirm it was reading values identical to the control.
+- **Not that the published 19 ms is wrong.** We have not yet made a valid measurement to compare it against.
 - **Not reflex-grade.** A 1–2 s simulation step is ~50× slower than real escape latency. This is a measurement tool.
 - **Not a product.** No user, no deployment target, no market.
 - **Not learning.** No weights update anywhere in the pipeline.
