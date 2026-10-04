@@ -1,0 +1,62 @@
+{
+  "subset": {
+    "neurons": 19267,
+    "edges": 829322
+  },
+  "dnp01": {
+    "count": 2
+  },
+  "published_attribution_percent": {
+    "LPLC2": 52.2,
+    "LC4": 45.2,
+    "other": 2.6
+  },
+  "model_attribution_percent": {
+    "DNp01": 0.0,
+    "DNp11": 1.0,
+    "DNp02": 0.0,
+    "DNp06": 0.1,
+    "DNp103": 2.4,
+    "DNg40": 0.2,
+    "LT66": 0.0,
+    "DNp05": 0.0,
+    "LPLC2": 41.4,
+    "LT40": 0.0,
+    "LC4": 54.2,
+    "LPLC1": 0.0,
+    "LT60": 0.0,
+    "DNp26": 0.3,
+    "DNa10": 0.1,
+    "DNp04": 0.0,
+    "DNp57": 0.2
+  },
+  "divergence": {
+    "lplc2_published": 52.2,
+    "lplc2_model": 41.4,
+    "lc4_published": 45.2,
+    "lc4_model": 54.2
+  },
+  "causal": {
+    "control": {
+      "dnp01_spikes": 82,
+      "network_spikes": 811273,
+      "saturated": false
+    },
+    "lplc2_silenced": {
+      "dnp01_spikes": 82,
+      "network_spikes": 743153,
+      "saturated": false
+    },
+    "lc4_silenced": {
+      "dnp01_spikes": 82,
+      "network_spikes": 798895,
+      "saturated": false
+    },
+    "both_silenced": {
+      "dnp01_spikes": 82,
+      "network_spikes": 725057,
+      "saturated": false
+    }
+  },
+  "conclusion": "Removing all incoming drive to LPLC2 changes the DNp01 response by +0 spikes. Removing LPLC2 and LC4 together changes it by +0 spikes. Published anatomy attributes 97.5% of GF visual input to these two types."
+}

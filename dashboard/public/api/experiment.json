@@ -1,0 +1,269 @@
+{
+  "status": true,
+  "statusCode": 200,
+  "data": {
+    "status": "complete",
+    "message": "Robust finding: DNp01 escapes its refractory ceiling in windows up to 300 ms and is pinned from 400 ms. Saturation is a window-length artefact, not a drive-strength artefact.",
+    "angularSizeDeg": 42.0,
+    "simulatedMs": 300.0,
+    "lplc2": {
+      "neuronCount": 185,
+      "meanRateHz": null,
+      "firstSpikeMs": 4.0
+    },
+    "giantFiber": {
+      "spikeCount": 117,
+      "rateHz": 390.0,
+      "firstSpikeMs": 8.0,
+      "saturated": false
+    },
+    "trials": [
+      {
+        "seed": 0,
+        "firstSpikeMs": 8.0
+      },
+      {
+        "seed": 1,
+        "firstSpikeMs": 8.0
+      },
+      {
+        "seed": 2,
+        "firstSpikeMs": 8.0
+      }
+    ],
+    "separability": [],
+    "sweep": [
+      {
+        "angularSizeDeg": 10.0,
+        "latencyMs": null,
+        "responseHz": 1,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 20.0,
+        "latencyMs": null,
+        "responseHz": 5,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 50.0,
+        "latencyMs": null,
+        "responseHz": 17,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 100.0,
+        "latencyMs": null,
+        "responseHz": 37,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 150.0,
+        "latencyMs": null,
+        "responseHz": 57,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 200.0,
+        "latencyMs": null,
+        "responseHz": 77,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 250.0,
+        "latencyMs": null,
+        "responseHz": 97,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 300.0,
+        "latencyMs": null,
+        "responseHz": 117,
+        "saturated": false
+      },
+      {
+        "angularSizeDeg": 400.0,
+        "latencyMs": null,
+        "responseHz": 157,
+        "saturated": true
+      }
+    ],
+    "raster": [
+      {
+        "group": "T4/T5 (13,595)",
+        "spikesMs": [
+          4.0,
+          4.5
+        ]
+      },
+      {
+        "group": "LPLC2 (185)",
+        "spikesMs": [
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0,
+          12.0,
+          14.0
+        ]
+      },
+      {
+        "group": "DNp01 (2)",
+        "spikesMs": [
+          8.0,
+          9.0,
+          10.0,
+          11.0,
+          12.0,
+          13.0,
+          14.0,
+          15.0,
+          16.0,
+          17.0,
+          18.0
+        ]
+      }
+    ],
+    "rasterWindowMs": 40.0,
+    "findings": {
+      "window": {
+        "unsaturated_windows_ms": [
+          10.0,
+          20.0,
+          50.0,
+          100.0,
+          150.0,
+          200.0,
+          250.0,
+          300.0
+        ],
+        "saturated_windows_ms": [
+          400.0
+        ],
+        "boundary_ms": 300.0,
+        "both_regimes_observed": true,
+        "statement": "DNp01 escapes its refractory ceiling in windows up to 300 ms and is pinned from 400 ms. Saturation is a window-length artefact, not a drive-strength artefact."
+      },
+      "attribution": {
+        "model_percent": {
+          "LC4": 54.2,
+          "LPLC2": 41.4,
+          "DNp103": 2.4,
+          "DNp11": 1.0,
+          "DNp26": 0.3,
+          "DNg40": 0.2,
+          "DNp57": 0.2,
+          "DNa10": 0.1,
+          "DNp06": 0.1,
+          "DNp02": 0.0,
+          "LT66": 0.0,
+          "DNp01": 0.0,
+          "DNp04": 0.0,
+          "DNp05": 0.0,
+          "LT40": 0.0,
+          "LPLC1": 0.0,
+          "LT60": 0.0
+        },
+        "published_percent": {
+          "LPLC2": 52.2,
+          "LC4": 45.2
+        },
+        "divergence": {
+          "lplc2_model": 41.4,
+          "lplc2_published": 52.2,
+          "lc4_model": 54.2,
+          "lc4_published": 45.2
+        }
+      },
+      "causality": {
+        "probe": "outgoing edges removed per type",
+        "control": 97,
+        "without_lplc2_output": 97,
+        "without_lc4_output": 97,
+        "without_both": 96,
+        "lplc2_required": false,
+        "lc4_required": false,
+        "either_required": false,
+        "zero_drive_spikes": 0,
+        "driven_spikes": 194,
+        "stimulus_reaches_network": true
+      },
+      "driveSweep": {
+        "window_ms": 20.0,
+        "rows": [
+          {
+            "fraction": 1.0,
+            "neurons_driven": 6719,
+            "lplc2_spikes": 1110,
+            "dnp01_spikes": 5,
+            "first_spike_ms": 8.0
+          },
+          {
+            "fraction": 0.1,
+            "neurons_driven": 671,
+            "lplc2_spikes": 1040,
+            "dnp01_spikes": 5,
+            "first_spike_ms": 8.0
+          },
+          {
+            "fraction": 0.01,
+            "neurons_driven": 67,
+            "lplc2_spikes": 838,
+            "dnp01_spikes": 5,
+            "first_spike_ms": 9.5
+          }
+        ],
+        "dnp01_values": [
+          5,
+          5,
+          5
+        ],
+        "invariant": true,
+        "statement": "DNp01 returns 5 spikes whether 67 lobula plate neurons are driven or 6719. The response is invariant to input magnitude across a 100x range."
+      },
+      "reproducibility": {
+        "trials": [
+          {
+            "seed": 0,
+            "dnp01_spikes": 97,
+            "firstSpikeMs": 8.0
+          },
+          {
+            "seed": 1,
+            "dnp01_spikes": 97,
+            "firstSpikeMs": 8.0
+          },
+          {
+            "seed": 2,
+            "dnp01_spikes": 97,
+            "firstSpikeMs": 8.0
+          }
+        ],
+        "spread": 0,
+        "latency_spread_ms": 0.0,
+        "reproducible": true,
+        "note": "Dynamics are deterministic: zero spread means no seed noise, not a robust result."
+      },
+      "verdict": {
+        "stimulus_reaches_network": true,
+        "magnitude_invariant": true,
+        "anatomical_input_required": false,
+        "saturation_escapes_in_short_window": true,
+        "saturated_in_long_window": true
+      },
+      "meta": {
+        "generated_by": "scripts/measure_final.py",
+        "subset_neurons": 19267,
+        "subset_edges": 829322,
+        "lplc2_neurons": 185,
+        "lc4_neurons": 126,
+        "dnp01_neurons": 2,
+        "step_ms": 0.5,
+        "quick": true
+      }
+    }
+  }
+}

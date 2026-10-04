@@ -33,29 +33,45 @@ export function useExperimentState(intervalMs = 2000): ExperimentState {
     let cancelled = false
 
     async function poll() {
-      try {
-        const response = await fetch('/api/experiment')
-        const envelope = (await response.json()) as {
-          status: boolean
-          statusCode: number
-          data?: ExperimentState
-          message?: string
-        }
+      // Try the bare path first (served by scripts/serve.py in dev, and by real hosts that do
+      // extensionless resolution), then the explicit .json path (served as a plain static file
+      // by export_static.py, including `python -m http.server` which does not resolve bare
+      // paths). One of the two always works, so the dashboard is host-independent.
+      const candidates = ['/api/experiment', '/api/experiment.json']
 
-        if (!cancelled) {
-          if (envelope.status && envelope.data) {
-            setState(envelope.data)
-            setServerError(null)
-          } else {
-            setServerError(envelope.message ?? `HTTP ${envelope.statusCode}`)
+      for (const path of candidates) {
+        try {
+          const response = await fetch(path)
+          const envelope = (await response.json()) as {
+            status: boolean
+            statusCode: number
+            data?: ExperimentState
+            message?: string
           }
+
+          if (envelope.status && envelope.data) {
+            if (!cancelled) {
+              setState(envelope.data)
+              setServerError(null)
+            }
+            return
+          }
+
+          // A well-formed failure envelope is a real answer, not a transport problem.
+          if (envelope.statusCode >= 400 && envelope.statusCode < 500) {
+            if (!cancelled) {
+              setState(EMPTY)
+              setServerError(envelope.message ?? `HTTP ${envelope.statusCode}`)
+            }
+            return
+          }
+        } catch {
+          // Try the next candidate.
         }
-      } catch {
-        if (!cancelled) {
-          setServerError(
-            'measurement API unreachable — run scripts/serve.py',
-          )
-        }
+      }
+
+      if (!cancelled) {
+        setServerError('measurement API unreachable — run scripts/serve.py')
       }
     }
 

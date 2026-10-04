@@ -1,0 +1,158 @@
+{
+  "config": {
+    "window_ms": 250.0,
+    "frames": 16,
+    "velocity_deg_per_s": 400.0,
+    "encoding": "contrast-onset timing (looming.py)",
+    "base_latency_ms": 24.0,
+    "gain_ms": 20.0,
+    "lplc2_neurons": 185
+  },
+  "published": {
+    "latency_ms": 19.0,
+    "size_peak_deg": 42.0,
+    "latency_source": "Ache et al. 2019, Curr Biol",
+    "size_source": "von Reyn et al. 2017"
+  },
+  "sweep": [
+    {
+      "angular_size_deg": 5.0,
+      "cells_driven": 0,
+      "neurons_driven": 0,
+      "lplc2_recruited": 0,
+      "lplc2_spikes": 0,
+      "first_drive_ms": null,
+      "first_spike_ms": null,
+      "dnp01_first_spike_ms": null,
+      "dnp01_spikes": 0,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 12.5,
+      "runtime_s": 0.03
+    },
+    {
+      "angular_size_deg": 10.0,
+      "cells_driven": 4,
+      "neurons_driven": 4,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 15554,
+      "first_drive_ms": 37.0,
+      "first_spike_ms": 39.0,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 85,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 25.0,
+      "runtime_s": 0.39
+    },
+    {
+      "angular_size_deg": 20.0,
+      "cells_driven": 4,
+      "neurons_driven": 4,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 15422,
+      "first_drive_ms": 38.5,
+      "first_spike_ms": 40.5,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 84,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 50.0,
+      "runtime_s": 0.37
+    },
+    {
+      "angular_size_deg": 30.0,
+      "cells_driven": 4,
+      "neurons_driven": 4,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 15130,
+      "first_drive_ms": 42.5,
+      "first_spike_ms": 44.5,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 83,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 75.0,
+      "runtime_s": 0.37
+    },
+    {
+      "angular_size_deg": 42.0,
+      "cells_driven": 12,
+      "neurons_driven": 12,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 15163,
+      "first_drive_ms": 43.0,
+      "first_spike_ms": 45.0,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 82,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 105.0,
+      "runtime_s": 0.37
+    },
+    {
+      "angular_size_deg": 60.0,
+      "cells_driven": 16,
+      "neurons_driven": 16,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 15336,
+      "first_drive_ms": 41.5,
+      "first_spike_ms": 43.5,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 83,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 150.0,
+      "runtime_s": 0.38
+    },
+    {
+      "angular_size_deg": 80.0,
+      "cells_driven": 32,
+      "neurons_driven": 32,
+      "lplc2_recruited": 185,
+      "lplc2_spikes": 13875,
+      "first_drive_ms": 60.5,
+      "first_spike_ms": 62.5,
+      "dnp01_first_spike_ms": 2.0,
+      "dnp01_spikes": 75,
+      "dnp01_ceiling": 100,
+      "saturated": false,
+      "window_s": 0.25,
+      "stimulus_duration_ms": 200.0,
+      "runtime_s": 0.38
+    }
+  ],
+  "seed_trials": [
+    {
+      "seed": 0,
+      "first_spike_ms": 2.0
+    },
+    {
+      "seed": 1,
+      "first_spike_ms": 2.0
+    },
+    {
+      "seed": 2,
+      "first_spike_ms": 2.0
+    }
+  ],
+  "seed_spread_ms": 0.0,
+  "seed_reproducible": true,
+  "latency_varies_with_size": false,
+  "latency_values_ms": [
+    2.0
+  ],
+  "latency_null_result": "First-spike latency is flat across stimulus sizes. The direct LPLC2->DNp01 synapse is excitatory and a single input spike is sufficient to cross threshold within one synaptic delay, so latency is floored at the path delay and cannot encode stimulus magnitude. Negative result; the readout was wrong, not the encoding.",
+  "recruitment_varies_with_size": false,
+  "recruitment_range": [
+    185,
+    185
+  ],
+  "size_at_minimum_recruitment_deg": 10.0
+}
