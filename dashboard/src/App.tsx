@@ -62,15 +62,41 @@ export default function App() {
           liveMotion={cameraLive ? camera.motion : null}
         />
 
-        {/* Hidden until the camera is on; the browser requires a real element to attach to. */}
+        {/* One video element, styled either as a visible preview or hidden. Two elements sharing
+            one ref would attach the stream to only one of them. The preview is visible so a
+            live feed is distinguishable from a broken one. */}
         <video
           ref={camera.videoRef}
-          className="hidden"
+          className={
+            cameraLive
+              ? 'h-32 w-48 rounded-md border border-border object-cover'
+              : 'hidden'
+          }
           playsInline
           muted
+          aria-label={cameraLive ? 'live camera feed' : undefined}
+        />
+        <canvas
+          ref={camera.canvasRef}
+          className="hidden"
+          width={8}
+          height={8}
           aria-hidden="true"
         />
-        <canvas ref={camera.canvasRef} className="hidden" width={8} height={8} aria-hidden="true" />
+
+        {cameraLive && (
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="font-mono text-xs">
+              <p className="text-ink-faint">live motion energy from your camera</p>
+              <p className="mt-0.5 text-xl text-spike">{camera.motion.toFixed(4)}</p>
+            </div>
+            <p className="max-w-sm text-xs text-ink-faint">
+              Computed in this browser from your frames on the same 8×8 grid the encoder
+              samples. The fly below reacts to <em>this</em> value. The measured spike counts
+              further down are recorded from the synthetic disk and are not recomputed here.
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CameraToggle

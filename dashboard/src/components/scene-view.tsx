@@ -63,28 +63,36 @@ export function SceneView({
           two objects so neither is mistaken for part of the fly. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-3">
         <span className="font-mono text-xs text-ink-faint">
-          {cameraMode ? 'camera feed (live)' : 'approaching disk'}
+          {cameraMode ? 'your camera — live' : 'approaching disk'}
         </span>
         <div className="flex flex-col items-end gap-1">
-          {saturated && <Badge tone="danger">saturated</Badge>}
+          {saturated && !cameraMode && <Badge tone="danger">saturated</Badge>}
           <span className="font-mono text-xs text-spike">
-            {rate === null ? 'brain idle' : `brain ${rate.toFixed(0)} Hz`}
+            {cameraMode
+              ? `motion ${(liveMotion ?? 0).toFixed(3)}`
+              : rate === null
+                ? 'brain idle'
+                : `brain ${rate.toFixed(0)} Hz`}
           </span>
         </div>
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between p-3">
-        <span className="font-mono text-xs text-ink-faint">
-          fly · dorsal nerve cord
-        </span>
+        <span className="font-mono text-xs text-ink-faint">fly</span>
         <span className="font-mono text-xs text-ink-faint">
           {cameraMode
-            ? 'motion ' + (liveMotion ?? 0).toFixed(3)
+            ? 'reacting to your camera'
             : playing
               ? 'replaying'
               : 'press start'}
         </span>
       </div>
+
+      {cameraMode && (
+        <p className="pointer-events-none absolute inset-x-0 bottom-9 px-3 text-center font-mono text-[10px] text-ink-faint">
+          fly motion is driven by your camera for illustration · not a neural measurement
+        </p>
+      )}
     </div>
   )
 }

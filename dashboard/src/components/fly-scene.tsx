@@ -238,18 +238,38 @@ export function FlyScene({
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
-    const gate = playing || usingCamera ? 1 : 0.3
-    const angle = Math.sin(t * beatHz * 2 * Math.PI) * 0.42 * gate
+
+    // In camera mode the fly is driven by the LIVE motion energy from the viewer's own
+    // frames, so moving something in front of the camera visibly moves the fly. This is a
+    // visualisation of the stimulus reaching the encoder — NOT a neural measurement. The
+    // recorded spike counts elsewhere on the page are not recomputed here, and the UI says so.
+    // In synthetic mode the recorded spike rate drives the wings instead.
+    const motion = liveMotion ?? 0
+    const active = usingCamera || playing
+    const gate = active ? 1 : 0.3
+
+    // Beat scales with motion: a still scene gives an idle flutter, a moving one beats hard.
+    const effectiveHz = usingCamera
+      ? IDLE_HZ + motion * 420
+      : beatHz
+    const angle = Math.sin(t * effectiveHz * 2 * Math.PI) * 0.42 * gate
 
     if (leftWing.current) leftWing.current.rotation.z = angle
     if (rightWing.current) rightWing.current.rotation.z = -angle
 
     if (brain.current) {
       const m = brain.current.material as MeshStandardMaterial
-      const pulse = 0.5 + 0.5 * Math.sin(t * 8)
-      m.emissiveIntensity = spikeHz === null ? 0.15 : 0.5 + pulse * 0.7
-      m.color.set(saturated ? '#991b1b' : '#38bdf8')
-      m.emissive.set(saturated ? '#991b1b' : '#38bdf8')
+      // Brain brightness tracks whichever stimulus is active.
+      const level = usingCamera ? Math.min(1, motion * 3) : spikeHz === null ? 0 : 1
+      const pulse = 0.5 + 0.5 * Math.sin(t * (usingCamera ? 6 + motion * 40 : 8))
+      m.emissiveIntensity = usingCamera
+        ? 0.15 + level * 2.2
+        : spikeHz === null
+          ? 0.15
+          : 0.5 + pulse * 0.7
+      const colour = saturated && !usingCamera ? '#991b1b' : '#38bdf8'
+      m.color.set(colour)
+      m.emissive.set(colour)
     }
 
     if (disk.current) {
@@ -276,7 +296,7 @@ export function FlyScene({
 
     // A whole-body twitch with the same drive as the wings, so the animal reads as alive.
     if (wings.current) {
-      wings.current.rotation.z = Math.sin(t * beatHz * Math.PI) * 0.03 * gate
+      wings.current.rotation.z = Math.sin(t * effectiveHz * Math.PI) * 0.03 * gate
     }
   })
 
