@@ -44,17 +44,14 @@ The frozen research layers (weight construction, LIF dynamics) are not modified.
 
 | Note | Contents |
 |---|---|
-| [[Architecture]] | Component boundaries, data flow, what is frozen vs new |
-| [[Experiments]] | Saturation sweep, separability measurement, temporal results |
-| [[Roadmap]] | In-window build plan, cut list, future work |
+| [[Architecture]] | Component boundaries, data flow, what is frozen vs new, stated compromises |
+| [[Biological-Reference]] | Published targets (19 ms, 42°, 97.5%) and pre-registered falsification criteria |
+| [[Experiments]] | What we measure, and what each result means |
+| [[Roadmap]] | In-window build plan, kill criteria, cut list, future work |
 | [[Problem-Statement]] | Problem evidence, target user, claims and non-claims |
 
-## Rules
+## The experiment in one line
 
-`AGENTS.md` at repo root. Note especially §1 (hackathon constraint — no core code before 10:00) and §6 (numerical honesty).
-
-## Provenance
-
-Code and data derived from `D:\Projects\timepass\fruitfly`. Full listing in `DISCLOSURE.md`.
+Drive the 185 LPLC2 neurons with contrast-onset **timing**, measure the **DNp01 first-spike latency**, and compare it to the **19 ms** reported by Ache et al. 2019 in real patch-clamp recordings. Match, or identify where the model diverges and why.
 
 Related: [[Working-Style]]

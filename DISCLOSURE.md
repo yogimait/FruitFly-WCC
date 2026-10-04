@@ -45,6 +45,28 @@ Populated as work proceeds, with commit references.
 |---|---|---|
 | — | — | _No in-window work recorded yet._ |
 
+## Pre-event scaffolding (commit `a7fd1dc`, `caa36b8`)
+
+Written before 10:00 IST on 4 Oct 2026. **None of this is the core product** — it is configuration, documentation, and a UI shell. The measured pipeline is built in-window.
+
+| Item | Nature |
+|---|---|
+| `dashboard/` | Fresh `bun create vite` React 19 + TS scaffold, plus Tailwind 4, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`. UI components composed by hand following shadcn conventions — no shadcn CLI, no copied shadcn source |
+| `docs/Biological-Reference.md` | Literature values gathered from published sources. Contains **no measurements of our own** |
+| `docs/Architecture.md`, `docs/Home.md`, `AGENTS.md` | Documentation and rules |
+| `.vibe-wise/` | Learning notes. Gitignored |
+
+No simulation, encoding, readout, or experiment code has been written yet.
+
+## What the core product will be
+
+Built in-window after 10:00 IST:
+
+1. Contrast-onset spike-train encoder (modifies source `structured_drive.py`)
+2. Latency and separability readout (extends source `neural_readout.py`)
+3. Experiment harness: angular-size sweep, seed trials, falsification checks
+4. Wiring the dashboard to measured output
+
 ## External assets
 
 | Asset | Source | Licence / note |
