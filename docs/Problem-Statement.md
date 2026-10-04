@@ -27,6 +27,16 @@ A measurement harness. It drives the real LPLC2 → DNp01 pathway from the MaleC
 
 We are not claiming a product. We are testing whether a published, connectome-accurate spiking model reproduces a published physiological result, and reporting what happens either way.
 
+**The hypothesis was refuted, and that is now the finding.** We set out to show that spike
+timing carries stimulus information that spike rate loses. Three independent readouts —
+first-spike latency, steady-state recruitment, and transient recruitment — all came back flat
+across stimulus sizes 10°–80°. The lobula columnar pool is recurrently self-sustained: it
+reaches its full state in about 2 ms regardless of how much input arrives, so the encoding
+choice makes no difference downstream. Full data in [[Experiments]] §Verdict.
+
+The contribution is therefore not "temporal coding works". It is **we identified precisely
+where the stimulus information is destroyed in this model, and we can show it.**
+
 ## Who it is for
 
 Two honest answers, not one flattering one:
@@ -41,9 +51,12 @@ Stated up front so nothing is discovered on stage (`AGENTS.md` §6).
 **We claim:**
 - A connectome-accurate spiking model can be driven by stimulus timing and its output measured against real electrophysiology.
 - Neuron selection is justified by published anatomy, not by an arbitrary threshold: the backward-from-output rule and the empirical anatomy agree independently.
-- Results are reported as measured, including when they fail the pre-registered checks.
+- **The recurrent lobula columnar pool destroys stimulus magnitude information at every readable timescale in this model**, measured across three independent readouts.
+- Results are reported as measured, including when they fail the pre-registered checks. Two of our own analyses produced false positives before being corrected; both are recorded in [[Experiments]] §Corrections log.
 
 **We do not claim:**
+- **Not that temporal coding works.** It did not, in this pathway at this scale. See [[Experiments]] §Verdict.
+- **Not that the published 19 ms is wrong.** This model cannot resolve the stimulus through this pathway. That is a statement about the readout, not about the biology.
 - **Not reflex-grade.** A 1–2 s simulation step is ~50× slower than real escape latency. This is a measurement tool.
 - **Not a product.** No user, no deployment target, no market.
 - **Not learning.** No weights update anywhere in the pipeline.
