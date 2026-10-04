@@ -241,6 +241,58 @@ the control** — the grading was present before the ablation and was not caused
 needed to compare against control, not against absolute distinctness. Third instance of the same
 class of error as experiments 3 and the luminance renderer; all three are recorded.
 
+## Experiment 5: the corrected measurement
+
+**Question.** With the drive moved upstream of LPLC2, what does the pathway actually do?
+
+**Harness.** `scripts/upstream_drive.py` (drive + guard) → `scripts/measure_final.py` →
+`data/measurement.json`
+
+**Drive point.** The lobula plate: 13,595 T4/T5 motion detectors, partitioned into 8
+`polarity × direction` classes. An expanding disk produces radial motion, so all four direction
+classes respond; T5 (OFF-motion) carries the response and T4 (ON-motion) is silent, which was
+measured rather than assumed. A static stimulus produces zero drive, as it must.
+
+### The guard that should have existed from the start
+
+`assert_stimulus_reaches_network` requires that a zero-drive window is silent and a driven
+window is not. Both hold: 0 spikes unstimulated, 194 driven. Every measurement below is taken
+only after this passes.
+
+`measure_pathway` then reports, as findings rather than assertions, whether each candidate type
+accounts for the downstream response.
+
+### Results
+
+| Measurement | Result |
+|---|---|
+| Response surface, 9 windows 10–400 ms | Escapes the ceiling to 300 ms; **pinned at 400 ms** |
+| Structural attribution | LPLC2 **41.4%** / LC4 **54.2%** vs published 52.2% / 45.2% |
+| Causal: without LPLC2 output | 97 vs 97 control spikes — **not required** |
+| Causal: without LC4 output | 97 vs 97 — **not required** |
+| Causal: without both | 96 vs 97 — **not required** |
+| Drive sweep, 6,719 → 67 neurons | DNp01 **5 spikes at every point**; LPLC2 1110 → 838 |
+| Seed reproducibility | spread **0**, latency spread **0.00 ms** (deterministic) |
+
+### Conclusions
+
+1. **The robust finding holds and is now bounded.** Saturation is a window-length artefact with
+   the boundary between 300 and 400 ms.
+2. **Stimulus magnitude is not recoverable from this readout.** The response is invariant across
+   a 100× drive range, and it does not require the two types carrying 97.5% of the published
+   visual input.
+3. **The network has one operating point.** Any input above a very low threshold drives it to
+   the same self-sustained state. LPLC2 and LC4 are structurally present and correctly
+   attributed, but neither is on the path the simulated output actually takes.
+4. **The connectome is not the problem.** Its attribution matches the published anatomy. The
+   divergence is between the connectome and the physiology the model reproduces.
+
+### What would make this a positive result
+
+Nothing in this project so far. The honest position: this model's recurrent dynamics place every
+readout of this pathway at a single operating point, so the timing-versus-rate question cannot be
+settled with it. That is a finding about the model, and it is the finding this entry reports.
+
 ## Corrections log
 
 Recording mistakes found by measurement rather than by reading, because each one would have

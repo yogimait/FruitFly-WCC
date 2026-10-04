@@ -13,4 +13,14 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // The measurement API is served by scripts/serve.py on :8765. Proxying it in dev lets
+    // `bun run dev` and `serve.py` run side by side with no CORS setup.
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8768',
+        changeOrigin: true,
+      },
+    },
+  },
 })

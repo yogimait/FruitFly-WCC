@@ -61,6 +61,8 @@ export interface SweepPoint {
 export interface ExperimentState {
   readonly status: 'idle' | 'running' | 'complete' | 'failed'
   readonly message: string | null
+  /** Set when the measurement API could not be reached or returned a failure envelope. */
+  readonly serverError?: string | null
 
   /** Stimulus angular size in degrees, the sweep axis. */
   readonly angularSizeDeg: number | null
@@ -75,6 +77,67 @@ export interface ExperimentState {
 
   /** Every spike time by neuron group, for the raster. */
   readonly raster: readonly RasterRow[]
+
+  /** Milliseconds the raster window spans, so the axis matches the measured tick range. */
+  readonly rasterWindowMs?: number
+
+  /**
+   * Measured findings, served alongside the live view. Each section maps to one file-backed
+   * measurement; nothing here is computed in the browser.
+   */
+  readonly findings?: {
+    readonly window?: {
+      readonly unsaturated_windows_ms: readonly number[]
+      readonly saturated_windows_ms: readonly number[]
+      readonly boundary_ms: number | null
+      readonly both_regimes_observed: boolean
+      readonly statement: string
+    }
+    readonly attribution?: {
+      readonly model_percent: Record<string, number>
+      readonly published_percent: Record<string, number>
+    }
+    readonly causality?: {
+      readonly control: number
+      readonly without_lplc2_output: number
+      readonly without_lc4_output: number
+      readonly without_both: number
+      readonly lplc2_required: boolean
+      readonly lc4_required: boolean
+      readonly either_required: boolean
+      readonly zero_drive_spikes: number
+      readonly driven_spikes: number
+      readonly stimulus_reaches_network: boolean
+    }
+    readonly driveSweep?: {
+      readonly window_ms: number
+      readonly rows: readonly {
+        readonly fraction: number
+        readonly neurons_driven: number
+        readonly lplc2_spikes: number
+        readonly dnp01_spikes: number
+        readonly first_spike_ms: number | null
+      }[]
+      readonly dnp01_values: readonly number[]
+      readonly invariant: boolean
+      readonly statement: string
+    }
+    readonly reproducibility?: {
+      readonly trials: readonly { readonly seed: number; readonly dnp01_spikes: number }[]
+      readonly spread: number
+      readonly reproducible: boolean
+      readonly note: string
+    }
+    readonly verdict?: Record<string, boolean>
+    readonly meta?: {
+      readonly subset_neurons: number
+      readonly subset_edges: number
+      readonly lplc2_neurons: number
+      readonly lc4_neurons: number
+      readonly dnp01_neurons: number
+      readonly step_ms: number
+    }
+  }
 }
 
 export interface RasterRow {

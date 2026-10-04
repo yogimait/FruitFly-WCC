@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { FindingsPanel } from '@/components/findings-panel'
 import { FlyPanel } from '@/components/fly-panel'
 import {
   ReproPanel,
@@ -22,7 +23,7 @@ import {
 import { REFERENCE } from '@/lib/experiment'
 import { sendControl, useExperimentState } from '@/lib/useExperiment'
 
-const TABS = ['live', 'sweep', 'reference'] as const
+const TABS = ['live', 'sweep', 'findings', 'reference'] as const
 type Tab = (typeof TABS)[number]
 
 export default function App() {
@@ -123,6 +124,8 @@ export default function App() {
           </>
         )}
 
+        {tab === 'findings' && <FindingsPanel state={state} />}
+
         {tab === 'reference' && (
           <Card>
             <CardHeader>
@@ -151,6 +154,12 @@ export default function App() {
               ))}
             </ul>
           </Card>
+        )}
+
+        {state.serverError && (
+          <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 font-mono text-xs text-danger">
+            {state.serverError}
+          </p>
         )}
 
         {state.message && (

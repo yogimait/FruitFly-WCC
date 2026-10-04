@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { ExperimentState } from './experiment'
 
@@ -16,15 +16,18 @@ const EMPTY: ExperimentState = {
 }
 
 /**
- * Polls the measurement harness for the current experiment state.
+ * Polls the measurement API for the current state.
  *
- * Polling rather than SSE or WebSocket: the Python side writes a JSON snapshot per run,
- * and a single LIF step takes 1-2 s. A 1 s poll is comfortably faster than the producer,
- * so a stream would add a server protocol for no observable gain. Simpler is correct here.
+ * Polling rather than SSE or WebSocket: the Python side produces a measurement offline and
+ * serves a static snapshot, so there is no producer faster than the poll interval. A stream
+ * would add a server protocol for no observable gain.
+ *
+ * The endpoint uses the response envelope ({status, statusCode, data}), so `data` is unwrapped
+ * here once rather than at every call site.
  */
-export function useExperimentState(intervalMs = 1000): ExperimentState {
+export function useExperimentState(intervalMs = 2000): ExperimentState {
   const [state, setState] = useState<ExperimentState>(EMPTY)
-  const hasError = useRef(false)
+  const [serverError, setServerError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -32,16 +35,27 @@ export function useExperimentState(intervalMs = 1000): ExperimentState {
     async function poll() {
       try {
         const response = await fetch('/api/experiment')
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const envelope = (await response.json()) as {
+          status: boolean
+          statusCode: number
+          data?: ExperimentState
+          message?: string
+        }
 
-        const next = (await response.json()) as ExperimentState
         if (!cancelled) {
-          setState(next)
-          hasError.current = false
+          if (envelope.status && envelope.data) {
+            setState(envelope.data)
+            setServerError(null)
+          } else {
+            setServerError(envelope.message ?? `HTTP ${envelope.statusCode}`)
+          }
         }
       } catch {
-        // Harness not running yet is the normal pre-event state, not an error to surface.
-        if (!cancelled && !hasError.current) setState(EMPTY)
+        if (!cancelled) {
+          setServerError(
+            'measurement API unreachable — run scripts/serve.py',
+          )
+        }
       }
     }
 
@@ -53,7 +67,7 @@ export function useExperimentState(intervalMs = 1000): ExperimentState {
     }
   }, [intervalMs])
 
-  return state
+  return { ...state, serverError }
 }
 
 export type RunControl = 'start' | 'stop' | 'step' | 'reset'
