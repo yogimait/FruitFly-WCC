@@ -151,6 +151,22 @@ def build_experiment_view(measurement: dict, response: dict | None) -> dict:
             'verdict': measurement.get('verdict', {}),
             'meta': meta,
         },
+
+        # The magnitude-invariance range, read from the sweep rather than written into the UI.
+        # The dashboard used to hardcode "67-6,719" in JSX, which meant the number on screen had
+        # no traceable source and would silently disagree with the data if the sweep changed.
+        'driveRange': {
+            'minNeurons': min(
+                (r['neurons_driven'] for r in sweep.get('rows', [])),
+                default=None,
+            ),
+            'maxNeurons': max(
+                (r['neurons_driven'] for r in sweep.get('rows', [])),
+                default=None,
+            ),
+            'spikeValues': sweep.get('dnp01_values'),
+            'invariant': sweep.get('invariant'),
+        },
     }
 
 

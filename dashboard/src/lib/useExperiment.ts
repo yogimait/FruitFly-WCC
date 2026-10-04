@@ -28,6 +28,7 @@ const EMPTY: ExperimentState = {
 export function useExperimentState(intervalMs = 2000): ExperimentState {
   const [state, setState] = useState<ExperimentState>(EMPTY)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +54,7 @@ export function useExperimentState(intervalMs = 2000): ExperimentState {
             if (!cancelled) {
               setState(envelope.data)
               setServerError(null)
+              setLoaded(true)
             }
             return
           }
@@ -83,7 +85,7 @@ export function useExperimentState(intervalMs = 2000): ExperimentState {
     }
   }, [intervalMs])
 
-  return { ...state, serverError }
+  return { ...state, serverError, loaded }
 }
 
 export type RunControl = 'start' | 'stop' | 'step' | 'reset'

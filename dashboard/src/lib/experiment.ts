@@ -69,6 +69,8 @@ export interface ExperimentState {
   readonly message: string | null
   /** Set when the measurement API could not be reached or returned a failure envelope. */
   readonly serverError?: string | null
+  /** False until the first successful load. Distinguishes "loading" from "no data". */
+  readonly loaded?: boolean
 
   /** Stimulus angular size in degrees, the sweep axis. */
   readonly angularSizeDeg: number | null
@@ -86,6 +88,19 @@ export interface ExperimentState {
 
   /** Milliseconds the raster window spans, so the axis matches the measured tick range. */
   readonly rasterWindowMs?: number
+
+  /**
+   * The magnitude-invariance range, served from the measured drive sweep.
+   *
+   * This was hardcoded in the dashboard before. Every number on screen has to trace to a file
+   * in `data/`, and a literal in JSX cannot.
+   */
+  readonly driveRange?: {
+    readonly minNeurons: number | null
+    readonly maxNeurons: number | null
+    readonly spikeValues: readonly number[] | null
+    readonly invariant: boolean | null
+  }
 
   /**
    * Measured findings, served alongside the live view. Each section maps to one file-backed

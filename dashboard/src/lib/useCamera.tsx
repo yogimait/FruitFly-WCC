@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-
 export type FeedSource = 'synthetic' | 'camera'
+
+/**
+ * Photoreceptor sampling grid, box-averaged.
+ *
+ * Resolution is a real trade-off, and both extremes were measured and rejected:
+ *
+ *   8x8, point-sampled  - a block spans 80x60 px, so a face moving slowly changes almost
+ *                         nothing and real motion fell below any usable bar.
+ *   40x40, point-sampled - reads raw per-pixel sensor jitter; a still webcam measured a
+ *                         peak of 17 luminance levels of pure noise.
+ *
+ * 16x16 box-averaged balances the two: each block is 40x30 px, which is wide enough to average
+ * out compression and sensor noise but small enough that a moving face still shifts several
+ * block means. 256 samples also sits below the connectome's 4,107 photoreceptor input ports, so
+ * this is a coarse sampling of a real input layer rather than an invented one.
+ *
+ * Exported because the sampling canvas must be exactly this size. When the two disagreed, the
+ * canvas was 8x8 while `drawImage` targeted 16x16: only the top-left quadrant of the frame was
+ * sampled and the remaining half of the grid read as permanently zero.
+ */
+export const CAMERA_GRID = 16
 
 /**
  * The stimulus source: either the synthetic looming disk, or a real webcam.
@@ -85,23 +104,7 @@ export function useCamera(source: FeedSource) {
     if (source !== 'camera' || status !== 'live') return
 
     let raf = 0
-    /**
-     * Photoreceptor sampling grid, box-averaged.
-     *
-     * Resolution is a real trade-off, and both extremes were measured and rejected:
-     *
-     *   8x8, point-sampled  - a block spans 80x60 px, so a face moving slowly changes almost
-     *                         nothing and real motion fell below any usable bar.
-     *   40x40, point-sampled - reads raw per-pixel sensor jitter; a still webcam measured a
-     *                         peak of 17 luminance levels of pure noise.
-     *
-     * 16x16 box-averaged balances the two: each block is 40x30 px, which is wide enough to
-     * average out compression and sensor noise but small enough that a moving face still
-     * shifts several block means. 256 samples also sits below the connectome's 4,107
-     * photoreceptor input ports, so this is a coarse sampling of a real input layer rather than
-     * an invented one.
-     */
-    const GRID = 16
+    const GRID = CAMERA_GRID
 
     const tick = () => {
       const video = videoRef.current
@@ -168,52 +171,4 @@ export function useCamera(source: FeedSource) {
   }, [grid])
 
   return { videoRef, canvasRef, status, motion, motionRaw, grid, start, stop }
-}
-
-/** Camera toggle with an honest label and an honest failure state. */
-export function CameraToggle({
-  source,
-  onChange,
-  status,
-  onStart,
-}: {
-  source: FeedSource
-  onChange: (next: FeedSource) => void
-  status: 'idle' | 'requesting' | 'live' | 'denied' | 'unavailable'
-  onStart: () => void
-}) {
-  const live = source === 'camera'
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button
-        size="sm"
-        variant={live ? 'default' : 'outline'}
-        onClick={() => {
-          if (live) {
-            onChange('synthetic')
-          } else {
-            onChange('camera')
-            if (status !== 'live') onStart()
-          }
-        }}
-      >
-        {live ? 'camera on' : 'use camera'}
-      </Button>
-
-      {status === 'requesting' && (
-        <span className="font-mono text-xs text-ink-faint">requesting…</span>
-      )}
-      {status === 'denied' && (
-        <span className="font-mono text-xs text-danger">
-          camera blocked — falling back to the synthetic disk
-        </span>
-      )}
-      {status === 'unavailable' && (
-        <span className="font-mono text-xs text-latency">
-          no camera available — using the synthetic disk
-        </span>
-      )}
-    </div>
-  )
 }

@@ -11,10 +11,12 @@ Checks
                      the network
   4. measure_final   produces data/measurement.json with the expected fields
   5. export_static   produces the deployable static files
-  6. dashboard      TypeScript build passes (skipped if bun is unavailable)
+  6. serve           backend envelope, view mapping, unmeasured-null, negative findings, routes
+  7. dashboard       TypeScript build passes (skipped if bun is unavailable)
+  8. dashboard lint  oxlint reports no errors (skipped if bun is unavailable)
 
-The dashboard's rendered output is verified separately by verify_dashboard.py, which needs a
-running server. See README.md.
+The dashboard's rendered output is verified separately by verify_camera_tuning.py and
+verify_dashboard.py, which need a running dev server. See README.md.
 """
 
 from __future__ import annotations
@@ -35,6 +37,7 @@ CHECKS: list[tuple[str, list[str] | None]] = [
     ('upstream_drive', [PY, str(SCRIPTS / 'upstream_drive.py'), '--test']),
     ('measure_final', [PY, str(SCRIPTS / 'measure_final.py'), '--quick']),
     ('export_static', [PY, str(SCRIPTS / 'export_static.py')]),
+    ('serve', [PY, str(SCRIPTS / 'test_serve.py')]),
 ]
 
 
@@ -74,19 +77,19 @@ def verify_measurement() -> list[str]:
     return problems
 
 
-def run_bun_build() -> tuple[bool, str]:
+def run_bun(script: str) -> tuple[bool, str]:
     dashboard = REPO_ROOT / 'dashboard'
     if not (dashboard / 'package.json').exists():
-        return True, 'skipped (no dashboard/package.json)'
+        return True, f'skipped (no dashboard/package.json)'
     try:
         proc = subprocess.run(
-            ['bun', 'run', 'build'],
+            ['bun', 'run', script],
             cwd=dashboard, capture_output=True, text=True, timeout=600,
         )
     except FileNotFoundError:
-        return True, 'skipped (bun not on PATH)'
+        return True, f'skipped (bun not on PATH)'
     except subprocess.TimeoutExpired:
-        return False, 'bun build timed out'
+        return False, f'bun {script} timed out'
     if proc.returncode != 0:
         return False, (proc.stderr or proc.stdout)[-800:]
     return True, 'ok'
@@ -118,9 +121,14 @@ def main() -> None:
         results.append(('measurement schema', True, 'ok'))
 
     print('--- dashboard build ---', flush=True)
-    ok, detail = run_bun_build()
+    ok, detail = run_bun('build')
     print(f'    {"PASS" if ok else "FAIL"}  {detail}')
     results.append(('dashboard build', ok, detail))
+
+    print('--- dashboard lint ---', flush=True)
+    ok, detail = run_bun('lint')
+    print(f'    {"PASS" if ok else "FAIL"}  {detail}')
+    results.append(('dashboard lint', ok, detail))
 
     print()
     failed = [r for r in results if not r[1]]
