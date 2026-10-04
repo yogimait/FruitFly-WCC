@@ -61,16 +61,27 @@ export default function App() {
 
   return (
     <div className="min-h-svh bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-sm font-medium text-ink">
-              Can spike timing see what spike rate cannot?
-            </h1>
-            {invariant === true && <Badge tone="danger">answer: no</Badge>}
-          </div>
+      <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-20 focus:rounded focus:bg-surface focus:px-3 focus:py-2 focus:font-mono focus:text-xs focus:text-spike"
+        >
+          skip to measurement
+        </a>
 
-          <div className="flex items-center gap-2">
+        <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+            <div className="flex items-center gap-3">
+              <h1 className="text-sm font-medium text-ink">
+                Can spike timing see what spike rate cannot?
+              </h1>
+              {invariant === true && <Badge tone="danger">answer: no</Badge>}
+            </div>
+
+            <div
+              className="flex items-center gap-2"
+              role="group"
+              aria-label="synthetic stimulus playback"
+            >
             <Button size="sm" onClick={playback.start} disabled={cameraLive}>
               {playing ? 'Running…' : 'Start'}
             </Button>
@@ -84,7 +95,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-4 px-6 py-6">
+      <main id="main" className="mx-auto max-w-5xl space-y-4 px-6 py-6">
         {/* Loading and failure are distinct states. Before the first successful load there is
             nothing to show, and saying "no data" would be wrong — it has not been fetched yet. */}
         {!state.loaded && !state.serverError && (
@@ -212,14 +223,17 @@ export default function App() {
         <ReproPanel state={state} />
 
         <button
+          type="button"
           onClick={() => setShowData((v) => !v)}
-          className="font-mono text-xs text-ink-faint underline underline-offset-4 hover:text-ink-muted"
+          aria-expanded={showData}
+          aria-controls="data-and-sources"
+          className="font-mono text-xs text-ink-faint underline underline-offset-4 hover:text-ink-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-spike"
         >
           {showData ? 'hide data' : 'show data & sources'}
         </button>
 
         {showData && (
-          <div className="space-y-4">
+          <div id="data-and-sources" className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-2">
               <SweepChart state={state} />
               <SaturationChart state={state} />

@@ -136,6 +136,28 @@ export function SaturationChart({ state }: { state: ExperimentState }) {
           </LineChart>
         </ResponsiveContainer>
       )}
+
+      {/* Recharts renders to canvas/SVG with no text, so the plotted numbers are unreachable
+          for anyone not looking at the chart. This is the same data as a real table. */}
+      <table className="sr-only">
+        <caption>Response versus measurement window</caption>
+        <thead>
+          <tr>
+            <th scope="col">Window (ms)</th>
+            <th scope="col">Response (% of refractory ceiling)</th>
+            <th scope="col">Saturated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.windowMs}>
+              <th scope="row">{r.windowMs}</th>
+              <td>{r.percentOfCeiling === null ? 'not measured' : `${r.percentOfCeiling}%`}</td>
+              <td>{r.saturated ? 'yes' : 'no'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Card>
   )
 }
@@ -212,6 +234,26 @@ export function SweepChart({ state }: { state: ExperimentState }) {
             response is identical across a 100× range of drive, which is why stimulus magnitude
             cannot be read from this network.
           </p>
+
+          {/* Text alternative for the chart above. A flat line is easy to miss and impossible
+              to read without sight, and here the flatness IS the result. */}
+          <table className="sr-only">
+            <caption>DNp01 spike count versus number of lobula plate neurons driven</caption>
+            <thead>
+              <tr>
+                <th scope="col">Neurons driven</th>
+                <th scope="col">DNp01 spikes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.neuronsDriven}>
+                  <th scope="row">{r.neuronsDriven.toLocaleString()}</th>
+                  <td>{r.dnp01Spikes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       )}
     </Card>

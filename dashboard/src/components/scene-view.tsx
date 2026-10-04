@@ -38,14 +38,22 @@ export function SceneView({
       <Suspense
         fallback={
           <div className="flex h-[420px] items-center justify-center font-mono text-xs text-ink-faint">
-            loading…
+            loading 3D scene…
           </div>
         }
       >
+        {/* The canvas is decorative: every number it implies is also present as text below it.
+            Labelled anyway so a screen-reader user knows what occupies the space. */}
         <Canvas
           camera={{ position: [0.35, 0.3, 3.2], fov: 44 }}
           dpr={[1, 1.75]}
           gl={{ antialias: true }}
+          role="img"
+          aria-label={
+            cameraMode
+              ? `Procedural fruitfly reacting to the live camera feed, motion ${(liveMotion ?? 0).toFixed(2)}`
+              : 'Procedural fruitfly facing an approaching looming disk'
+          }
         >
           <ambientLight intensity={0.7} />
           <hemisphereLight args={['#cbd5e1', '#0a0c11', 0.5]} />
