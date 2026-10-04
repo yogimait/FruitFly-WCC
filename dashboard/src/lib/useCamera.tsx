@@ -34,21 +34,25 @@ export function useCamera(source: FeedSource) {
   const prevRef = useRef<Uint8ClampedArray | null>(null)
 
   /**
-   * Perceptual normalisation of raw motion energy.
+   * Absolute threshold for calling a cell "hot", in luminance units (0-255).
    *
-   * Raw mean absolute luminance change on a downscaled 8x8 grid is tiny: a person sitting
-   * still in a lit room measures about 0.002. Scaled linearly onto an animation parameter that
-   * is indistinguishable from zero, so the fly looks inert. A square root spreads the low end
-   * into a usable range while preserving order, and the floor guarantees a visible baseline so
-   * "still" never reads as "off".
-   *
-   * Not a scientific mapping — it exists so the stimulus is legible to a human. The raw
-   * measured value is always displayed alongside it, unmodified.
+   * The previous version normalised each cell against the brightest cell in the frame, which
+   * made sensor noise look identical to a moving object: a raw measurement of 0.0016 lit 26 of
+   * 64 cells. Now a cell must clear a fixed bar in absolute terms, so quiet noise stays dark and
+   * only real change lights up.
    */
-  const normalise = (raw: number): number => {
-    const scaled = Math.sqrt(Math.min(1, raw * 6))
-    return Math.min(1, 0.18 + scaled * 0.82)
-  }
+  const HOT_THRESHOLD = 26
+
+  /**
+   * Exponential smoothing over frames.
+   *
+   * A webcam delivers noisy frames, and per-frame differencing makes even a stationary subject
+   * flicker. Smoothing keeps a genuinely still scene still while still tracking real movement
+   * within a couple of frames.
+   */
+  const SMOOTHING = 0.35
+
+  const smoothRef = useRef<number[] | null>(null)
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -99,33 +103,37 @@ export function useCamera(source: FeedSource) {
           ctx.drawImage(video, 0, 0, GRID, GRID)
           const { data } = ctx.getImageData(0, 0, GRID, GRID)
 
-          let delta = 0
-          const perCell = new Array<number>(GRID * GRID).fill(0)
+          const raw_cells = new Array<number>(GRID * GRID).fill(0)
+          let total = 0
 
           if (prevRef.current) {
             const prev = prevRef.current
-            let peak = 0
             for (let cell = 0; cell < GRID * GRID; cell++) {
-              const i = cell * 4
-              const d = Math.abs(data[i] - prev[i])
-              perCell[cell] = d
-              delta += d
-              if (d > peak) peak = d
+              const d = Math.abs(data[cell * 4] - prev[cell * 4])
+              raw_cells[cell] = d
+              total += d
             }
-            delta /= GRID * GRID * 255
-            // Normalise the per-cell map against its own peak so a faint scene still shows
-            // structure rather than a black square.
-            if (peak > 0) {
-              for (let cell = 0; cell < perCell.length; cell++) {
-                perCell[cell] /= peak
-              }
-            }
-            setGrid(perCell)
           }
+          const mean = total / (GRID * GRID * 255)
+
+          // Smooth the per-cell field so a stationary subject does not flicker.
+          const prevSmooth = smoothRef.current
+          const smoothed = prevSmooth
+            ? raw_cells.map((v, i) => prevSmooth[i] * (1 - SMOOTHING) + v * SMOOTHING)
+            : raw_cells
+          smoothRef.current = smoothed
+
+          // Absolute threshold, so noise stays dark. Scaled by the strongest cell only when
+          // that cell is itself well above the bar, which keeps dynamic range without
+          // promoting noise to signal.
+          const peak = Math.max(...smoothed)
+          const scale = peak > HOT_THRESHOLD ? peak : HOT_THRESHOLD
+          setGrid(smoothed.map((v) => Math.min(1, v / scale)))
 
           prevRef.current = new Uint8ClampedArray(data)
-          setMotionRaw(delta)
-          setMotion(normalise(delta))
+          setMotionRaw(mean)
+          // Baseline floor keeps a still scene visibly alive rather than looking switched off.
+          setMotion(Math.min(1, 0.15 + Math.sqrt(Math.min(1, mean * 7)) * 0.85))
         }
       }
       raf = requestAnimationFrame(tick)

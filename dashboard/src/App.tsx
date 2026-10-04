@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { FindingsPanel } from '@/components/findings-panel'
 import { ReproPanel } from '@/components/measure-panels'
 import { RasterPanel } from '@/components/raster-panel'
 import { SceneView } from '@/components/scene-view'
-import { StimulusMapPanel } from '@/components/stimulus-map'
+import { LiveSpikePanel, predictSpikes, type LiveSpike } from '@/components/live-spikes'
 import { SaturationChart, SweepChart } from '@/components/sweep-charts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,10 +24,35 @@ export default function App() {
   const playback = usePlayback(STIMULUS_FRAMES, FRAME_MS)
   const camera = useCamera(source)
   const playing = playback.state === 'running'
+  const cameraLive = source === 'camera' && camera.status === 'live'
+  const invariant = state.findings?.verdict?.magnitude_invariant
+
+  // Spikes are recomputed on animation frames rather than on camera frames, so the raster
+  // refreshes continuously instead of waiting for the next camera sample.
+  const [liveSpikes, setLiveSpikes] = useState<readonly LiveSpike[]>([])
+  useEffect(() => {
+    if (!cameraLive) {
+      setLiveSpikes([])
+      return
+    }
+    let raf = 0
+    const tick = () => {
+      setLiveSpikes(predictSpikes(camera.grid, camera.motion))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [cameraLive, camera.grid, camera.motion])
+
+  // The fly's brightness follows real descending-neuron output rather than raw motion, so its
+  // visible reaction and the raster on screen are driven by the same number.
+  const liveDrive = useMemo(() => {
+    if (!cameraLive) return null
+    const dn = liveSpikes.filter((s) => s.group === 'DNp01').length
+    return Math.min(1, dn / 7)
+  }, [cameraLive, liveSpikes])
 
   const gf = state.giantFiber
-  const invariant = state.findings?.verdict?.magnitude_invariant
-  const cameraLive = source === 'camera' && camera.status === 'live'
 
   return (
     <div className="min-h-svh bg-background">
@@ -61,6 +86,7 @@ export default function App() {
           progress={playback.progress}
           source={source}
           liveMotion={cameraLive ? camera.motion : null}
+          liveDrive={liveDrive}
         />
 
         {/* One video element, styled either as a visible preview or hidden. Two elements sharing
@@ -144,11 +170,7 @@ export default function App() {
 
         <RasterPanel state={state} progress={playback.progress} hidden={cameraLive} />
         {cameraLive && (
-          <StimulusMapPanel
-            grid={camera.grid}
-            raw={camera.motionRaw}
-            normalised={camera.motion}
-          />
+          <LiveSpikePanel grid={camera.grid} spikes={liveSpikes} />
         )}
         <ReproPanel state={state} />
 

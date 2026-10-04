@@ -20,12 +20,14 @@ export function SceneView({
   progress,
   source = 'synthetic',
   liveMotion = null,
+  liveDrive = null,
 }: {
   state: ExperimentState
   playing: boolean
   progress: number
   source?: FeedSource
   liveMotion?: number | null
+  liveDrive?: number | null
 }) {
   const rate = state.giantFiber?.rateHz ?? null
   const saturated = state.giantFiber?.saturated ?? false
@@ -55,6 +57,7 @@ export function SceneView({
             playing={playing}
             progress={progress}
             liveMotion={cameraMode ? liveMotion : null}
+            liveDrive={cameraMode ? liveDrive : null}
           />
         </Canvas>
       </Suspense>

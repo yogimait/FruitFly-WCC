@@ -217,6 +217,8 @@ interface SceneProps {
   progress: number
   /** Live camera motion energy 0..1, or null when using the synthetic stimulus. */
   liveMotion: number | null
+  /** Live DNp01 output rate from the camera-driven encoder, 0..1. Null when synthetic. */
+  liveDrive: number | null
 }
 
 export function FlyScene({
@@ -225,6 +227,7 @@ export function FlyScene({
   playing,
   progress,
   liveMotion,
+  liveDrive,
 }: SceneProps) {
   const leftWing = useRef<Group>(null)
   const rightWing = useRef<Group>(null)
@@ -262,14 +265,18 @@ export function FlyScene({
 
     if (brain.current) {
       const m = brain.current.material as MeshStandardMaterial
-      // Brain brightness tracks whichever stimulus is active.
-      const level = usingCamera ? motion : spikeHz === null ? 0 : 1
-      const pulse = 0.5 + 0.5 * Math.sin(t * (usingCamera ? 5 + motion * 45 : 8))
-      m.emissiveIntensity = usingCamera
-        ? 0.2 + level * 3.2
-        : spikeHz === null
-          ? 0.15
-          : 0.5 + pulse * 0.7
+      if (usingCamera) {
+        // Brightness tracks the live descending-neuron output count, so the fly's visible
+        // response and the raster below it are driven by the same number. Falls back to the
+        // motion level when the encoder has not produced output yet.
+        const drive = liveDrive ?? motion
+        m.emissiveIntensity = 0.2 + drive * 4.5
+      } else if (spikeHz === null) {
+        m.emissiveIntensity = 0.15
+      } else {
+        const pulse = 0.5 + 0.5 * Math.sin(t * 8)
+        m.emissiveIntensity = 0.5 + pulse * 0.7
+      }
       const colour = saturated && !usingCamera ? '#991b1b' : '#38bdf8'
       m.color.set(colour)
       m.emissive.set(colour)
