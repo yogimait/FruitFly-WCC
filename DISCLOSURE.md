@@ -39,11 +39,18 @@ Descending-neuron rates saturate near 400 Hz and quantize at 1.67 Hz, giving ~0�
 
 ## Built during the event
 
-Populated as work proceeds, with commit references.
-
 | Item | Commit | Notes |
 |---|---|---|
-| — | — | _No in-window work recorded yet._ |
+| `scripts/neural_core.py` | `pending` | Frozen LIF dynamics with deterministic spike-train input. Imports constants from the source project rather than copying them, so they cannot silently diverge. Self-check asserts the pathway exists and that unstimulated networks stay silent. |
+| `scripts/measure_response_surface.py` | `pending` | Experiment 1. Sweeps drive sparsity, onset and window length. Writes `data/response-surface.json`. |
+| `scripts/probe_response.py` | `pending` | Interactive probe used to find the unescaped regime. Measurement only, no assertions. |
+| `scripts/inspect_subset.py` | `pending` | Read-only inspection of constants and the LPLC2→DNp01 subset. |
+| `data/response-surface.json` | `pending` | 24 measured configurations. |
+| `docs/Experiments.md` | `pending` | Experiment log, including three corrections made by measurement rather than by reading. |
+
+**Modified from source:** none. `neural_core.py` reimplements the delivery loop to accept
+timed input; the constants (`DT`, `V_REST`, `V_RESET`, `V_TH`, `DECAY_M`, `DECAY_SYN`,
+`REFRACT_STEPS`, `DELAY_STEPS`) are imported from `lif_escape.py`, not duplicated.
 
 ## Pre-event scaffolding (commit `a7fd1dc`, `caa36b8`)
 

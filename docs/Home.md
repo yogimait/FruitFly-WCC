@@ -6,7 +6,20 @@ Spiking-neural-network perception: a descending-neuron-rooted subset of the male
 
 ## Status
 
-Pre-event. Scaffolding and documentation only — core pipeline code is written in-window per organiser Rule 1.
+In-window. Experiment 1 complete — see [[Experiments]].
+
+## Key finding
+
+Saturation is a **window-length artefact, not a drive-strength artefact**. Measured across
+24 configurations: driving all 185 LPLC2 neurons or just 1 produces the same pinned output in
+a 0.3 s window. Shortening the window to 5–100 ms escapes the ceiling entirely.
+
+That is the whole argument for temporal over rate coding in one measurement: integrate over a
+long window and you can only see the ceiling. Measure in a short window and timing survives.
+
+Our stimulus enters at the lobula columnar, so the first DNp01 spike lands at **6.0 ms**
+against a published **19 ms** — the predicted direction of the discrepancy, since retinal and
+lamina processing are excluded.
 
 ## Scope Decision
 

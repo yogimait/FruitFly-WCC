@@ -15,20 +15,26 @@ Core pipeline code is deliberately absent — organiser Rule 1.
 
 Hours are build time, not wall clock. The event runs 30 hours; the work fits in ten.
 
-| Block | Hours | Deliverable | Kill criterion |
+| Block | Hours | Deliverable | Status |
 |---|---|---|---|
-| 1 | 0.5 | Contrast-onset encoder: frame → precisely-timed spike train | — |
-| 2 | 2 | Drive LPLC2 (185 neurons), measure DNp01 first-spike latency | — |
-| 3 | 1.5 | Seed trials; confirm spread < 1 ms | If spread ≥ 1 ms, stop and report as non-reproducible rather than tuning it away |
-| 4 | 1 | Escape saturation if present | If still pinned, record saturation and pivot to the size-threshold test |
-| 5 | 1.5 | Angular-size sweep, look for peak near 42° | If peak lands on a sweep boundary, widen the range once; if still bounded, report it |
-| 6 | 1 | Separability above noise floor | If indistinguishable from random, report honestly and drop rung-3 claims |
-| 7 | 1 | Wire dashboard to measured JSON | — |
-| 8 | 0.5 | Falsification checks as asserts (`AGENTS.md` §9) | — |
-| 9 | 0.5 | Writeup, disclose in-window commits | — |
+| 0 | 1 | Frozen dynamics harness + response surface measurement | **done** — [[Experiments]] §1 |
+| 1 | 0.5 | Contrast-onset encoder: frame → precisely-timed spike train | next |
+| 2 | 2 | Drive LPLC2, measure DNp01 first-spike latency in a 50 ms window | |
+| 3 | 1.5 | Seed trials; confirm spread < 1 ms | Fails: stop, report non-reproducible |
+| 4 | 1 | ~~Escape saturation~~ — solved by window length in block 0 | done |
+| 5 | 1.5 | Angular-size sweep, look for peak near 42° | Fails: peak on a boundary, widen once |
+| 6 | 1 | Separability above noise floor | Fails: indistinguishable from random, drop rung-3 claims |
+| 7 | 1 | Wire dashboard to measured JSON | |
+| 8 | 0.5 | Falsification checks as asserts (`AGENTS.md` §9) | |
+| 9 | 0.5 | Writeup, disclose in-window commits | |
 | 10 | 0.5 | Buffer | Submit by 8 AM, not 14:00 |
 
-**The kill criteria are the point.** An experiment that cannot fail proves nothing, and a null result reported plainly is worth more than a passing number obtained by tuning.
+**Measurement window is now a first-class experimental parameter.** Block 0 showed DNp01 is
+unsaturated below ~150 ms and pinned above ~200 ms, so blocks 2, 3 and 5 must use a window in
+the 20–100 ms range. Every measurement records the window it used.
+
+**The kill criteria are the point.** An experiment that cannot fail proves nothing, and a null
+result reported plainly is worth more than a passing number obtained by tuning.
 
 ## Cut list, decided in advance
 
