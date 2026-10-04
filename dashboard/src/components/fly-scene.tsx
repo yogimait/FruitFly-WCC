@@ -248,11 +248,14 @@ export function FlyScene({
     const active = usingCamera || playing
     const gate = active ? 1 : 0.3
 
-    // Beat scales with motion: a still scene gives an idle flutter, a moving one beats hard.
+    // Beat and amplitude both scale with the stimulus, from the normalised value which already
+    // carries a visible baseline. At rest the fly idles at ~24 Hz; a moving subject pushes it
+    // toward ~180 Hz with a much larger stroke, so the change is obvious.
     const effectiveHz = usingCamera
-      ? IDLE_HZ + motion * 420
+      ? IDLE_HZ + motion * 170
       : beatHz
-    const angle = Math.sin(t * effectiveHz * 2 * Math.PI) * 0.42 * gate
+    const stroke = usingCamera ? 0.18 + motion * 0.42 : 0.42
+    const angle = Math.sin(t * effectiveHz * 2 * Math.PI) * stroke * gate
 
     if (leftWing.current) leftWing.current.rotation.z = angle
     if (rightWing.current) rightWing.current.rotation.z = -angle
@@ -260,10 +263,10 @@ export function FlyScene({
     if (brain.current) {
       const m = brain.current.material as MeshStandardMaterial
       // Brain brightness tracks whichever stimulus is active.
-      const level = usingCamera ? Math.min(1, motion * 3) : spikeHz === null ? 0 : 1
-      const pulse = 0.5 + 0.5 * Math.sin(t * (usingCamera ? 6 + motion * 40 : 8))
+      const level = usingCamera ? motion : spikeHz === null ? 0 : 1
+      const pulse = 0.5 + 0.5 * Math.sin(t * (usingCamera ? 5 + motion * 45 : 8))
       m.emissiveIntensity = usingCamera
-        ? 0.15 + level * 2.2
+        ? 0.2 + level * 3.2
         : spikeHz === null
           ? 0.15
           : 0.5 + pulse * 0.7
@@ -291,7 +294,10 @@ export function FlyScene({
     }
 
     if (body.current) {
+      // Idle bob, plus a forward lean under stimulus so the body itself visibly responds.
       body.current.position.y = Math.sin(t * 1.5) * 0.01
+      const lean = usingCamera ? motion * 0.22 : playing ? 0.08 : 0
+      body.current.rotation.x = 0.08 - lean + Math.sin(t * 2.2) * 0.01
     }
 
     // A whole-body twitch with the same drive as the wings, so the animal reads as alive.

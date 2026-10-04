@@ -75,13 +75,18 @@ function Raster({
 export function RasterPanel({
   state,
   progress = 1,
+  hidden = false,
 }: {
   state: ExperimentState
   /** 0..1 position in the stimulus sequence. Ticks beyond it are hidden. */
   progress?: number
+  /** Hidden while the camera drives the stimulus, since this raster is from the disk. */
+  hidden?: boolean
 }) {
   const windowMs = state.rasterWindowMs ?? 40
   const visibleMs = progress * windowMs
+
+  if (hidden) return null
 
   return (
     <Card>

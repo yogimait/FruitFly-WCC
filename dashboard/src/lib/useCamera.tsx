@@ -25,15 +25,38 @@ export function useCamera(source: FeedSource) {
     'idle' | 'requesting' | 'live' | 'denied' | 'unavailable'
   >('idle')
   const [motion, setMotion] = useState(0)
+  /** Raw mean absolute luminance change, unmodified. Shown next to the normalised value. */
+  const [motionRaw, setMotionRaw] = useState(0)
+  /** Per-cell motion energy on the 8x8 grid, normalised to 0..1. Real measured data. */
+  const [grid, setGrid] = useState<number[] | null>(null)
 
   // Previous downsampled frame, for the motion measure the encoder actually uses.
   const prevRef = useRef<Uint8ClampedArray | null>(null)
+
+  /**
+   * Perceptual normalisation of raw motion energy.
+   *
+   * Raw mean absolute luminance change on a downscaled 8x8 grid is tiny: a person sitting
+   * still in a lit room measures about 0.002. Scaled linearly onto an animation parameter that
+   * is indistinguishable from zero, so the fly looks inert. A square root spreads the low end
+   * into a usable range while preserving order, and the floor guarantees a visible baseline so
+   * "still" never reads as "off".
+   *
+   * Not a scientific mapping — it exists so the stimulus is legible to a human. The raw
+   * measured value is always displayed alongside it, unmodified.
+   */
+  const normalise = (raw: number): number => {
+    const scaled = Math.sqrt(Math.min(1, raw * 6))
+    return Math.min(1, 0.18 + scaled * 0.82)
+  }
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
     setStatus('idle')
     setMotion(0)
+    setMotionRaw(0)
+    setGrid(null)
     prevRef.current = null
   }, [])
 
@@ -76,16 +99,33 @@ export function useCamera(source: FeedSource) {
           ctx.drawImage(video, 0, 0, GRID, GRID)
           const { data } = ctx.getImageData(0, 0, GRID, GRID)
 
-          // Mean absolute luminance change across cells, normalised to 0..1.
           let delta = 0
+          const perCell = new Array<number>(GRID * GRID).fill(0)
+
           if (prevRef.current) {
-            for (let i = 0; i < data.length; i += 4) {
-              delta += Math.abs(data[i] - prevRef.current[i])
+            const prev = prevRef.current
+            let peak = 0
+            for (let cell = 0; cell < GRID * GRID; cell++) {
+              const i = cell * 4
+              const d = Math.abs(data[i] - prev[i])
+              perCell[cell] = d
+              delta += d
+              if (d > peak) peak = d
             }
-            delta /= (GRID * GRID * 255)
+            delta /= GRID * GRID * 255
+            // Normalise the per-cell map against its own peak so a faint scene still shows
+            // structure rather than a black square.
+            if (peak > 0) {
+              for (let cell = 0; cell < perCell.length; cell++) {
+                perCell[cell] /= peak
+              }
+            }
+            setGrid(perCell)
           }
+
           prevRef.current = new Uint8ClampedArray(data)
-          setMotion(delta)
+          setMotionRaw(delta)
+          setMotion(normalise(delta))
         }
       }
       raf = requestAnimationFrame(tick)
@@ -97,7 +137,7 @@ export function useCamera(source: FeedSource) {
 
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), [])
 
-  return { videoRef, canvasRef, status, motion, start, stop }
+  return { videoRef, canvasRef, status, motion, motionRaw, grid, start, stop }
 }
 
 /** Camera toggle with an honest label and an honest failure state. */

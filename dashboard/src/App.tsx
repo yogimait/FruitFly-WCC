@@ -4,6 +4,7 @@ import { FindingsPanel } from '@/components/findings-panel'
 import { ReproPanel } from '@/components/measure-panels'
 import { RasterPanel } from '@/components/raster-panel'
 import { SceneView } from '@/components/scene-view'
+import { StimulusMapPanel } from '@/components/stimulus-map'
 import { SaturationChart, SweepChart } from '@/components/sweep-charts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -141,7 +142,14 @@ export default function App() {
           </Card>
         </div>
 
-        <RasterPanel state={state} progress={playback.progress} />
+        <RasterPanel state={state} progress={playback.progress} hidden={cameraLive} />
+        {cameraLive && (
+          <StimulusMapPanel
+            grid={camera.grid}
+            raw={camera.motionRaw}
+            normalised={camera.motion}
+          />
+        )}
         <ReproPanel state={state} />
 
         <button
