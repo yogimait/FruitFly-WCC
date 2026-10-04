@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: oklch(0.16 0.008 265);
+  --color-surface: oklch(0.2 0.01 265);
+  --color-surface-raised: oklch(0.24 0.012 265);
+  --color-border: oklch(0.3 0.014 265);
+
+  --color-ink: oklch(0.96 0.004 265);
+  --color-ink-muted: oklch(0.72 0.012 265);
+  --color-ink-faint: oklch(0.55 0.014 265);
+
+  --color-spike: oklch(0.78 0.17 155);
+  --color-latency: oklch(0.74 0.16 55);
+  --color-target: oklch(0.7 0.15 245);
+  --color-danger: oklch(0.65 0.2 20);
+
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-ink);
+    font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Spike raster and other dense numeric displays read better monospaced. */
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
