@@ -27,27 +27,30 @@ Two changes, in this order, and the second is a guard that should have existed f
 
 Until both are in place, treat experiments 2–4 as method development, not as results.
 
-## In-window plan, roughly 10 hours
+## In-window plan — complete
 
 Hours are build time, not wall clock. The event runs 30 hours; the work fits in ten.
 
-| Block | Hours | Deliverable | Status |
-|---|---|---|---|
-| 0 | 1 | Frozen dynamics harness + response surface measurement | **done** — [[Experiments]] §1 |
-| 1 | 0.5 | Contrast-onset encoder: frame → precisely-timed spike train | next |
-| 2 | 2 | Drive LPLC2, measure DNp01 first-spike latency in a 50 ms window | |
-| 3 | 1.5 | Seed trials; confirm spread < 1 ms | Fails: stop, report non-reproducible |
-| 4 | 1 | ~~Escape saturation~~ — solved by window length in block 0 | done |
-| 5 | 1.5 | Angular-size sweep, look for peak near 42° | Fails: peak on a boundary, widen once |
-| 6 | 1 | Separability above noise floor | Fails: indistinguishable from random, drop rung-3 claims |
-| 7 | 1 | Wire dashboard to measured JSON | |
-| 8 | 0.5 | Falsification checks as asserts (`AGENTS.md` §9) | |
-| 9 | 0.5 | Writeup, disclose in-window commits | |
-| 10 | 0.5 | Buffer | Submit by 8 AM, not 14:00 |
+| Block | Deliverable | Status |
+|---|---|---|
+| 0 | Frozen dynamics harness + response surface measurement | **done** — [[Experiments]] §1 |
+| 1 | Contrast-onset encoder: frame → precisely-timed spike train | **done** — `looming.py`, `spike-encoder.ts` |
+| 2 | Drive the lobula plate, measure DNp01 first-spike latency | **done** — 8.00 ms |
+| 3 | Seed trials | **done** — spread 0.00 ms, deterministic |
+| 4 | Escape saturation | **done** — window-length artefact, not drive |
+| 5 | Angular-size sweep for a peak near 42° | **not run** — separability was a precondition and it failed |
+| 6 | Separability above noise floor | **done** — failed; see [[Experiments]] |
+| 7 | Dashboard wired to measured JSON | **done** |
+| 8 | Backend, tests, docs | **done** — [[API]], [[Testing]] |
+| 9 | Live camera stimulus with encoder raster | **done** |
+| 10 | Writeup, disclosure, demo video | **done** |
 
-**Measurement window is now a first-class experimental parameter.** Block 0 showed DNp01 is
-unsaturated below ~150 ms and pinned above ~200 ms, so blocks 2, 3 and 5 must use a window in
-the 20–100 ms range. Every measurement records the window it used.
+**Block 6 was the kill switch.** Separability above the noise floor did not hold, so the angular-
+size sweep that depended on it (block 5) was never run. Reporting that plainly was worth more
+than a curve fitted to noise.
+
+**Measurement window is a first-class experimental parameter.** DNp01 is unsaturated at or below
+300 ms and pinned from 400 ms, so every measurement records the window it used.
 
 **The kill criteria are the point.** An experiment that cannot fail proves nothing, and a null
 result reported plainly is worth more than a passing number obtained by tuning.
@@ -63,23 +66,33 @@ Agreed not to be revisited mid-build:
 - No mobile layout
 - No database beyond JSON files in `data/`
 
-## Future work — write it, do not build it
-
-These go in the writeup as the reason a judge should believe the work was heading somewhere:
-
-- **Temporal code at the retina.** Contrast onset currently enters at the lobula columnar. Running it through a real lamina would remove the largest compromise.
-- **Reward-modulated plasticity.** STDP or three-factor learning would make the network adapt rather than merely respond. Everything is currently frozen.
-- **Event-camera input.** A camera that fires on change, rather than a camera that samples, matches the encoder we built and removes the frame-rate bottleneck.
-- **The full 95,200-neuron visual chain.** Already on disk. Feasible offline, and it would let the neuron selection be validated rather than assumed.
-
 ## Honest limits to state in the writeup
 
-Per `AGENTS.md` §6 and the writeup plan, name these before a judge does:
+Per `AGENTS.md` §6, name these before a judge does:
 
-1. A 1–2 s simulation step is **not** a reflex. Real escape is ~19 ms. This is a measurement tool, not a flight controller.
-2. Stimulus enters at the lobula columnar, so retinal and lamina processing are excluded.
-3. Nothing learns. No weights update anywhere in the pipeline.
-4. The connectome weights are real and published; the *stimulus* is synthetic.
-5. Saturation is a known confound and is reported even when tests pass.
+1. **The response is invariant to stimulus magnitude** and does not require LPLC2 or LC4. This is
+   the central negative result, and it means this network cannot support a decision as built.
+2. **The live browser raster is an encoder prediction, not neural output.** No LIF integration
+   runs in the browser. The interface states this on screen.
+3. Stimulus enters at the lobula columnar, so retinal and lamina processing are excluded.
+4. Nothing learns. No weights update anywhere in the pipeline.
+5. The connectome weights are real and published; the stimulus is synthetic.
+6. Dynamics are deterministic — a 0.00 ms seed spread means no seed noise, not a robust result.
+7. The camera noise floor is measured against synthetic clips, not real hardware.
 
-Related: [[Home]] · [[Architecture]] · [[Biological-Reference]] · [[Experiments]]
+## Future work — write it, do not build it
+
+- **Put the stimulus upstream of LPLC2.** The causal-path defect above is still open. Injecting at
+  the lobula plate rather than at LPLC2's matrix position would make the anatomical input
+  genuinely necessary, and would test whether invariance is an artefact of where drive enters.
+- **Temporal code at the retina.** Removing the largest compromise by running contrast onset
+  through a real lamina.
+- **Reward-modulated plasticity.** Everything is currently frozen.
+- **Event-camera input.** Fires on change rather than sampling, matching the encoder built here.
+- **The full 95,200-neuron visual chain.** On disk, feasible offline; would let the neuron
+  selection be validated rather than assumed.
+
+## Related
+
+[[Home]] · [[Architecture]] · [[API]] · [[Data-Model]] · [[Testing]] ·
+[[Biological-Reference]] · [[Experiments]]

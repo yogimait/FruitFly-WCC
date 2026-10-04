@@ -2,69 +2,71 @@
 
 Hackathon entry for **WCC Launchpad 30** — 4 Oct 2026 10:00 IST → 5 Oct 2026 14:00 IST. Solo, Agentic AI track.
 
-Spiking-neural-network perception: a descending-neuron-rooted subset of the male fruitfly connectome, driven by spike **timing** instead of spike **rate**, measured against a baseline.
+Spiking-neural-network perception: a descending-neuron-rooted subset of the male fruitfly
+connectome, asked whether spike **timing** carries what spike **rate** cannot.
 
 ## Status
 
-In-window. Experiment 1 complete — see [[Experiments]].
+In-window. Experiment complete and measured. Dashboard, backend, tests and docs are implemented;
+see [[Roadmap]] for what remains out of scope.
 
-## Key finding
+## The question, and the answer
 
-Saturation is a **window-length artefact, not a drive-strength artefact**. Measured across
-24 configurations: driving all 185 LPLC2 neurons or just 1 produces the same pinned output in
-a 0.3 s window. Shortening the window to 5–100 ms escapes the ceiling entirely.
+**Can spike timing see what spike rate cannot? No — not in this network.**
 
-That is the whole argument for temporal over rate coding in one measurement: integrate over a
-long window and you can only see the ceiling. Measure in a short window and timing survives.
+Three measurements, all reproducible:
 
-Our stimulus enters at the lobula columnar, so the first DNp01 spike lands at **6.0 ms**
-against a published **19 ms** — the predicted direction of the discrepancy, since retinal and
-lamina processing are excluded.
+| Finding | Evidence |
+|---|---|
+| Saturation is a **window-length** artefact, not a drive artefact | DNp01 escapes its refractory ceiling up to a 300 ms window and is pinned from 400 ms |
+| The response is **invariant to stimulus magnitude** | 5 spikes whether 67 or 6,719 lobula plate neurons are driven — a 100× range |
+| The anatomical input is **not required** | Removing LPLC2 output, LC4 output, or both leaves DNp01 at 97 / 97 / 96 spikes vs a control of 97 |
 
-## Scope Decision
+The last two are negative results and are reported as such. LPLC2 and LC4 carry 97.5% of the
+published giant-fibre visual input, yet neither is necessary in the simulated pathway, and
+stimulus magnitude does not move the readout at all. Structural attribution agrees on which
+populations matter but disagrees on the balance: LPLC2 **41.4%** / LC4 **54.2%** here, against a
+published **52.2%** / **45.2%**.
 
-**Chosen: temporal coding over a descending-neuron-rooted subset.**
+First DNp01 spike lands at **8.00 ms** against a published **19 ms**, with a spread of 0.00 ms
+across seeds. Deterministic dynamics mean that spread is the absence of seed noise, not evidence
+of a robust result.
 
-Three candidate directions were considered at the first design checkpoint:
+## Why this matters anyway
 
-| Direction | What it fixes | Cost |
-|---|---|---|
-| 1. Unpinned drive regime | Saturation in the current 19k subset | Setup hours we do not have |
-| 2. Scored task with ground truth | Makes "better than random" a number | No physical environment to film |
-| 3. **Temporal coding** | **Rate saturation — the root cause** | **Deepest learning payoff** |
+The negative result is the deliverable. Rate coding caps how much a spike can carry, so a
+saturated, magnitude-invariant, input-independent readout cannot support a decision — and the
+fix is not more neurons. Adding 146k neurons to an already self-sustained recurrent network
+risks worsening exactly the saturation being investigated.
 
-Direction 3 was chosen because rate saturation is the underlying blocker: rate coding caps how much a spike can carry, so no amount of extra neurons fixes it. Spike *timing* carries strictly more information per spike.
-
-**Whole-connectome live simulation was rejected:** 165,122 neurons and ~40M spikes per step implies 40–80 s per decision on CPU. That yields ~40 decisions across the entire 30-hour event — no loop, no demo. Worse, adding 146k neurons to an already-saturated recurrent network risks *worsening* saturation, which is the exact problem being fixed.
-
-**Neuron selection rule (chosen): backward from the output.** Start from the 40 descending neurons — the only directly readable layer — and trace back only what feeds them. Smallest network that still produces a decision.
-
-**Why not the alternatives:** the full 165,122-neuron connectome and the ~95,200-neuron anatomical visual chain stay available for *offline analysis* on disk. The live loop uses only the subset that measurably carries signal.
-
-## Architecture (proposed, not implemented)
-
-The proposed flow, unchanged in shape from the source simulation but with timing-sensitive encoding:
+## What is actually implemented
 
 ```
-frame → 8x8 luminance grid → spike-train drive (precise timing, not Poisson rate)
-      → LIF subset (connectome weights) → 40 descending neurons
-      → temporal readout (latency / onset / first-spike) → decision
+camera or synthetic disk → luminance grid → contrast-onset encoder → LIF subset (19,267 neurons)
+  → 40 descending neurons → readout (rate, first-spike latency)
 ```
 
-The frozen research layers (weight construction, LIF dynamics) are not modified. Only the *input encoding* and the *readout* change.
+The stimulus can be **live** from a webcam. The **measurement is recorded** and served as data.
+The live raster in the browser is the *encoder's* predicted input timing, not a simulation of the
+19,267 neurons, and the interface says so on screen.
 
 ## Documentation
 
 | Note | Contents |
 |---|---|
-| [[Architecture]] | Component boundaries, data flow, what is frozen vs new, stated compromises |
-| [[Biological-Reference]] | Published targets (19 ms, 42°, 97.5%) and pre-registered falsification criteria |
-| [[Experiments]] | What we measure, and what each result means |
-| [[Roadmap]] | In-window build plan, kill criteria, cut list, future work |
+| [[Architecture]] | Component boundaries, data flow, frozen vs new, stated compromises |
+| [[Data-Model]] | Every file in `data/`, its provenance, and the API contract |
+| [[API]] | Backend endpoints, response envelope, error codes |
+| [[Testing]] | The nine automated checks, the browser verifiers, and how to run them |
+| [[Experiments]] | What we measure, what each result means |
+| [[Biological-Reference]] | Published targets (19 ms, 42°, 97.5%) and falsification criteria |
 | [[Problem-Statement]] | Problem evidence, target user, claims and non-claims |
+| [[Roadmap]] | Cut list and future work |
 
 ## The experiment in one line
 
-Drive the 185 LPLC2 neurons with contrast-onset **timing**, measure the **DNp01 first-spike latency**, and compare it to the **19 ms** reported by Ache et al. 2019 in real patch-clamp recordings. Match, or identify where the model diverges and why.
+Drive the lobula columnar pool with contrast-onset **timing**, measure the **DNp01 first-spike
+latency**, and test whether the response varies with **stimulus magnitude** — the thing a
+decision would actually need.
 
 Related: [[Working-Style]]
