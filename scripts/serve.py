@@ -225,7 +225,12 @@ class Handler(SimpleHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8765)
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=8768,
+        help='default matches the Vite dev proxy target in dashboard/vite.config.ts',
+    )
     parser.add_argument('--host', default='127.0.0.1')
     args = parser.parse_args()
 

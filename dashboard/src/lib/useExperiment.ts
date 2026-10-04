@@ -33,11 +33,11 @@ export function useExperimentState(intervalMs = 2000): ExperimentState {
     let cancelled = false
 
     async function poll() {
-      // Try the bare path first (served by scripts/serve.py in dev, and by real hosts that do
-      // extensionless resolution), then the explicit .json path (served as a plain static file
-      // by export_static.py, including `python -m http.server` which does not resolve bare
-      // paths). One of the two always works, so the dashboard is host-independent.
-      const candidates = ['/api/experiment', '/api/experiment.json']
+      // The static export is the primary source: scripts/export_static.py writes it to
+      // public/api, so dev and a deployed build read the identical file. The bare path is
+      // kept as a fallback for scripts/serve.py, which is handy when re-running the
+      // measurement and viewing it without rebuilding the dashboard.
+      const candidates = ['/api/experiment.json', '/api/experiment']
 
       for (const path of candidates) {
         try {
@@ -71,7 +71,7 @@ export function useExperimentState(intervalMs = 2000): ExperimentState {
       }
 
       if (!cancelled) {
-        setServerError('measurement API unreachable — run scripts/serve.py')
+        setServerError('no measurement data — run scripts/export_static.py')
       }
     }
 

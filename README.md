@@ -25,33 +25,55 @@ connectome itself. Full data and the reasoning in [`docs/Experiments.md`](docs/E
 The Python side needs the source project's virtualenv, which holds numpy, scipy and pandas.
 No new Python dependencies.
 
-```powershell
-$py = "D:\Projects\timepass\fruitfly\.venv\Scripts\python.exe"
-
-# 1. self-checks (fast, no server)
-& $py scripts\neural_core.py    --test
-& $py scripts\looming.py        --test
-& $py scripts\upstream_drive.py --test
-
-# 2. run the measurement, writes data/measurement.json
-& $py scripts\measure_final.py
-
-# 3. serve it to the dashboard
-& $py scripts\serve.py --port 8768
-```
-
-Then, in a second terminal:
+**To just view the dashboard** — no server, no Python running:
 
 ```powershell
 cd dashboard
 bun install
-bun run dev          # proxies /api to 127.0.0.1:8768
+bun run dev
 ```
 
-Optionally verify the wiring end to end:
+That is enough. The measurement was exported to `dashboard/public/api/` and `bun run dev`
+serves those static files, exactly as a deployed build does.
+
+**To re-run the measurement** after changing anything in `scripts/`:
 
 ```powershell
-& $py scripts\verify_dashboard.py "http://localhost:5173/"
+$py = "D:\Projects\timepass\fruitfly\.venv\Scripts\python.exe"
+
+# 1. self-checks (fast)
+& $py scripts\neural_core.py    --test
+& $py scripts\looming.py        --test
+& $py scripts\upstream_drive.py --test
+
+# 2. run all checks, including the measurement:  ~10 s
+& $py scripts\test_all.py
+
+# 3. copy the fresh measurement into dashboard/public/api
+& $py scripts\export_static.py
+```
+
+`scripts/serve.py --port 8768` is an **optional** way to browse the data files over HTTP. It is
+not required for the dashboard, which reads the static export.
+
+### Deploying
+
+`dist/` is a plain static site. Any host works:
+
+```powershell
+cd dashboard
+bun run build
+```
+
+Then deploy `dashboard/dist` to Vercel, Netlify, GitHub Pages, or any static host. There is no
+server, no Python, and no GPU on the deployed host — the simulation runs offline and its output
+ships as JSON. Judges should be told this plainly: **the recorded measurement is served, not
+recomputed.**
+
+To test the deployable artifact locally:
+
+```powershell
+python -m http.server 8080 -d dashboard\dist
 ```
 
 ## What is where
@@ -62,7 +84,7 @@ Optionally verify the wiring end to end:
 | `scripts/looming.py` | Analytic looming-disk renderer and the contrast-onset encoder. |
 | `scripts/upstream_drive.py` | T4/T5 motion drive, one stage upstream of LPLC2. Carries the reachability guard. |
 | `scripts/measure_final.py` | The measurement run. Produces everything the dashboard renders. |
-| `scripts/serve.py` | Static API over the measurement file. Uses the project response envelope. |
+| `scripts/serve.py` | Optional static HTTP viewer for the data files. Not needed by the dashboard. Uses the project response envelope. |
 | `scripts/verify_dashboard.py` | Asserts the UI renders measured values, not placeholders. |
 | `data/measurement.json` | The measurement record. Every dashboard number traces here. |
 | `dashboard/` | React 19 + Vite 8 + Tailwind 4, three.js fly, Recharts. |
