@@ -11,6 +11,7 @@ const EMPTY: ExperimentState = {
   giantFiber: null,
   trials: [],
   separability: [],
+  sweep: [],
   raster: [],
 }
 

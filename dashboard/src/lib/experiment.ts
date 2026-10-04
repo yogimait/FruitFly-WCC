@@ -45,6 +45,19 @@ export interface SeparabilityPair {
   readonly distance: number
 }
 
+/**
+ * One point on the angular-size sweep.
+ *
+ * `latencyMs` is the headline measurement; `responseHz` is the rate readout that saturates.
+ * Both are kept so the saturation story is visible in the same chart as the latency story.
+ */
+export interface SweepPoint {
+  readonly angularSizeDeg: number
+  readonly latencyMs: number | null
+  readonly responseHz: number | null
+  readonly saturated: boolean
+}
+
 export interface ExperimentState {
   readonly status: 'idle' | 'running' | 'complete' | 'failed'
   readonly message: string | null
@@ -58,6 +71,7 @@ export interface ExperimentState {
   readonly giantFiber: GiantFiberStats | null
   readonly trials: readonly LatencyTrial[]
   readonly separability: readonly SeparabilityPair[]
+  readonly sweep: readonly SweepPoint[]
 
   /** Every spike time by neuron group, for the raster. */
   readonly raster: readonly RasterRow[]
@@ -73,6 +87,12 @@ export const REFERENCE: {
   readonly latencyMs: ReferenceTarget
   readonly sizeThresholdDeg: ReferenceTarget
   readonly gfVisualInputShare: ReferenceTarget
+  /**
+   * Refractory ceiling for a 0.3 s window at 0.1 ms steps: one spike per step bounds the
+   * maximum measurable rate at ~333 Hz per neuron. Source project measurements sit near
+   * 400 Hz across longer windows.
+   */
+  readonly refractoryCeilingHz: number
 } = {
   latencyMs: {
     label: 'Published DNp01 sensory latency',
@@ -92,4 +112,5 @@ export const REFERENCE: {
     unit: '%',
     source: 'Card & von Reyn; PLOS Biol 2025',
   },
+  refractoryCeilingHz: 400,
 }
