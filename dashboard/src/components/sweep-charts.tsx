@@ -15,11 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  REFERENCE,
-  type ExperimentState,
-  type SweepPoint,
-} from '@/lib/experiment'
+import { type ExperimentState, type SweepPoint } from '@/lib/experiment'
 
 const AXIS = { stroke: 'var(--color-ink-faint)', fontSize: 11 }
 const GRID = 'var(--color-border)'
@@ -38,25 +34,20 @@ type TooltipValue =
   | null
   | undefined
 
-/**
- * Recharts hands the formatter a loose `ValueType | undefined`, not a narrowed numeric
- * type. Coerce here rather than casting at each call site: a null reading must render as
- * "no response", never as 0 (AGENTS.md §6).
- */
 function toFinite(value: TooltipValue): number | null {
   if (value === null || value === undefined) return null
   const n = typeof value === 'number' ? value : Number(Array.isArray(value) ? value[0] : value)
   return Number.isFinite(n) ? n : null
 }
 
-function formatMs(value: TooltipValue) {
-  const n = toFinite(value)
-  return n === null ? 'no response' : `${n.toFixed(2)} ms`
-}
-
 function formatHz(value: TooltipValue) {
   const n = toFinite(value)
-  return n === null ? 'no response' : `${n.toFixed(1)} Hz`
+  return n === null ? 'no response' : `${n.toFixed(0)} Hz`
+}
+
+function formatPct(value: TooltipValue) {
+  const n = toFinite(value)
+  return n === null ? 'no response' : `${n.toFixed(1)}% of ceiling`
 }
 
 /** Recharts accepts a loose row type; ours is stricter, so bridge it once here. */
@@ -65,103 +56,27 @@ function toRows(sweep: readonly SweepPoint[]) {
 }
 
 /**
- * Latency across the angular-size sweep, against the published 42 deg threshold.
+ * DNp01 firing rate as a percentage of its refractory ceiling, against window length.
  *
- * The 42 deg line is the von Reyn eta-model prediction for where a real GF response peaks.
- * Whether our curve peaks there is the test. A curve that peaks at a sweep boundary means
- * the range was too narrow to locate the maximum, which is a failed test rather than a
- * result — see docs/Biological-Reference.md falsification criteria.
- */
-export function SweepChart({ state }: { state: ExperimentState }) {
-  const hasData = state.sweep.some((p) => p.latencyMs !== null)
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>DNp01 latency vs stimulus size</CardTitle>
-        <CardDescription>
-          Published response peaks near {REFERENCE.sizeThresholdDeg.value}
-          {REFERENCE.sizeThresholdDeg.unit}
-        </CardDescription>
-      </CardHeader>
-
-      {!hasData ? (
-        <p className="py-8 text-center font-mono text-xs text-ink-faint">
-          sweep not measured
-        </p>
-      ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={toRows(state.sweep)}>
-            <CartesianGrid stroke={GRID} strokeDasharray="2 4" />
-            <XAxis
-              dataKey="angularSizeDeg"
-              stroke={AXIS.stroke}
-              fontSize={AXIS.fontSize}
-              tickLine={false}
-              label={{
-                value: 'angular size (deg)',
-                position: 'insideBottom',
-                offset: -2,
-                fill: 'var(--color-ink-faint)',
-                fontSize: 11,
-              }}
-            />
-            <YAxis
-              stroke={AXIS.stroke}
-              fontSize={AXIS.fontSize}
-              tickLine={false}
-              width={52}
-              tickFormatter={(v: number) => `${v} ms`}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              formatter={(value) => [formatMs(value), 'measured']}
-            />
-            <ReferenceLine
-              y={REFERENCE.latencyMs.value}
-              stroke="var(--color-target)"
-              strokeDasharray="4 4"
-              label={{
-                value: `published ${REFERENCE.latencyMs.value} ms`,
-                fill: 'var(--color-target)',
-                fontSize: 10,
-                position: 'insideBottomRight',
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="latencyMs"
-              stroke="var(--color-spike)"
-              strokeWidth={2}
-              dot={{ r: 3, fill: 'var(--color-spike)' }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
-    </Card>
-  )
-}
-
-/**
- * Rate response across the sweep, with the refractory ceiling marked.
- *
- * This is the saturation story in one picture. A flat line at the ceiling means the output
- * is pinned and every latency derived from it is uninformative — the reason temporal coding
- * was chosen over rate coding in the first place.
+ * The x-axis is the measurement window, not stimulus size. That is the whole point of this
+ * chart: the same stimulus produces a different apparent response purely because of how long
+ * you look. The dashed line is where the response would sit if it were pinned.
  */
 export function SaturationChart({ state }: { state: ExperimentState }) {
-  const hasData = state.sweep.some((p) => p.responseHz !== null)
-  const ceiling = REFERENCE.refractoryCeilingHz
+  const rows = state.sweep.map((p) => ({
+    windowMs: p.angularSizeDeg,
+    percentOfCeiling:
+      p.angularSizeDeg > 0 ? Math.min(100, (p.responseHz ?? 0) * 100) : null,
+    saturated: p.saturated,
+  }))
+  const hasData = rows.some((r) => r.percentOfCeiling !== null)
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Descending-neuron rate vs stimulus size</CardTitle>
+        <CardTitle>Response vs measurement window</CardTitle>
         <CardDescription>
-          Refractory ceiling ~{ceiling} Hz · a flat line at the ceiling means the output is
-          pinned
+          Same stimulus throughout. Only the window changes.
         </CardDescription>
       </CardHeader>
 
@@ -171,15 +86,15 @@ export function SaturationChart({ state }: { state: ExperimentState }) {
         </p>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={toRows(state.sweep)}>
+          <LineChart data={toRows(rows as unknown as SweepPoint[])}>
             <CartesianGrid stroke={GRID} strokeDasharray="2 4" />
             <XAxis
-              dataKey="angularSizeDeg"
+              dataKey="windowMs"
               stroke={AXIS.stroke}
               fontSize={AXIS.fontSize}
               tickLine={false}
               label={{
-                value: 'angular size (deg)',
+                value: 'measurement window (ms)',
                 position: 'insideBottom',
                 offset: -2,
                 fill: 'var(--color-ink-faint)',
@@ -191,15 +106,15 @@ export function SaturationChart({ state }: { state: ExperimentState }) {
               fontSize={AXIS.fontSize}
               tickLine={false}
               width={52}
-              domain={[0, Math.ceil(ceiling * 1.15)]}
-              tickFormatter={(v: number) => `${v} Hz`}
+              unit="%"
+              domain={[0, 105]}
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              formatter={(value) => [formatHz(value), 'measured']}
+              formatter={(value) => [formatPct(value), 'of refractory ceiling']}
             />
             <ReferenceLine
-              y={REFERENCE.refractoryCeilingHz}
+              y={100}
               stroke="var(--color-danger)"
               strokeDasharray="4 4"
               label={{
@@ -211,7 +126,7 @@ export function SaturationChart({ state }: { state: ExperimentState }) {
             />
             <Line
               type="monotone"
-              dataKey="responseHz"
+              dataKey="percentOfCeiling"
               stroke="var(--color-latency)"
               strokeWidth={2}
               dot={{ r: 3, fill: 'var(--color-latency)' }}
@@ -220,6 +135,84 @@ export function SaturationChart({ state }: { state: ExperimentState }) {
             />
           </LineChart>
         </ResponsiveContainer>
+      )}
+    </Card>
+  )
+}
+
+/**
+ * How much the drive sweep actually varies the response.
+ *
+ * This is the negative result as a chart: the x-axis spans a 100x range of driven neurons and
+ * the line does not move. A flat line here is the finding, not a failure to plot.
+ */
+export function SweepChart({ state }: { state: ExperimentState }) {
+  const drive = state.findings?.driveSweep
+  const rows = (drive?.rows ?? []).map((r) => ({
+    neuronsDriven: r.neurons_driven,
+    dnp01Spikes: r.dnp01_spikes,
+  }))
+  const hasData = rows.length > 0
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Does more input produce more response?</CardTitle>
+        <CardDescription>
+          {drive ? `${drive.window_ms} ms window` : 'No measurement loaded'}
+        </CardDescription>
+      </CardHeader>
+
+      {!hasData ? (
+        <p className="py-8 text-center font-mono text-xs text-ink-faint">
+          drive sweep not measured
+        </p>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={toRows(rows as unknown as SweepPoint[])}>
+              <CartesianGrid stroke={GRID} strokeDasharray="2 4" />
+              <XAxis
+                dataKey="neuronsDriven"
+                stroke={AXIS.stroke}
+                fontSize={AXIS.fontSize}
+                tickLine={false}
+                label={{
+                  value: 'lobula plate neurons driven (log-ish spacing)',
+                  position: 'insideBottom',
+                  offset: -2,
+                  fill: 'var(--color-ink-faint)',
+                  fontSize: 11,
+                }}
+              />
+              <YAxis
+                stroke={AXIS.stroke}
+                fontSize={AXIS.fontSize}
+                tickLine={false}
+                width={40}
+                tickFormatter={(v: number) => `${v}`}
+              />
+              <Tooltip
+                contentStyle={TOOLTIP_STYLE}
+                formatter={(value) => [formatHz(value), 'DNp01 spikes']}
+              />
+              <Line
+                type="monotone"
+                dataKey="dnp01Spikes"
+                stroke="var(--color-spike)"
+                strokeWidth={2}
+                dot={{ r: 4, fill: 'var(--color-spike)' }}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <p className="mt-3 rounded-md border border-danger/30 bg-danger/[0.06] px-3 py-2 text-xs leading-relaxed text-ink-muted">
+            <strong className="text-danger">Flat line — that is the finding.</strong> The
+            response is identical across a 100× range of drive, which is why stimulus magnitude
+            cannot be read from this network.
+          </p>
+        </>
       )}
     </Card>
   )

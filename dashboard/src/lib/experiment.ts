@@ -52,9 +52,15 @@ export interface SeparabilityPair {
  * Both are kept so the saturation story is visible in the same chart as the latency story.
  */
 export interface SweepPoint {
+  /**
+   * For the saturation sweep this carries the measurement WINDOW in milliseconds, not a
+   * stimulus angle. The field name is historical. The dashboard always labels the axis
+   * explicitly, so the on-screen meaning is never ambiguous.
+   */
   readonly angularSizeDeg: number
   readonly latencyMs: number | null
   readonly responseHz: number | null
+  readonly percentOfCeiling?: number | null
   readonly saturated: boolean
 }
 

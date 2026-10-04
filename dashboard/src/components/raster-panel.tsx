@@ -13,7 +13,15 @@ const SPIKE_STROKE = 'var(--color-spike)'
  * SVG rather than canvas because the row count is small (a handful of groups) and the markup
  * stays inspectable during a live demo.
  */
-function Raster({ rows, windowMs }: { rows: readonly RasterRow[]; windowMs: number }) {
+function Raster({
+  rows,
+  windowMs,
+  cutoffMs,
+}: {
+  rows: readonly RasterRow[]
+  windowMs: number
+  cutoffMs: number
+}) {
   if (rows.length === 0) {
     return (
       <p className="py-6 text-center font-mono text-xs text-ink-faint">
@@ -45,7 +53,7 @@ function Raster({ rows, windowMs }: { rows: readonly RasterRow[]; windowMs: numb
               strokeWidth={0.5}
             />
             {row.spikesMs
-              .filter((t) => t >= 0 && t <= windowMs)
+              .filter((t) => t >= 0 && t <= windowMs && t <= cutoffMs)
               .map((t, i) => (
                 <line
                   key={`${row.group}-${i}`}
@@ -64,8 +72,16 @@ function Raster({ rows, windowMs }: { rows: readonly RasterRow[]; windowMs: numb
   )
 }
 
-export function RasterPanel({ state }: { state: ExperimentState }) {
+export function RasterPanel({
+  state,
+  progress = 1,
+}: {
+  state: ExperimentState
+  /** 0..1 position in the stimulus sequence. Ticks beyond it are hidden. */
+  progress?: number
+}) {
   const windowMs = state.rasterWindowMs ?? 40
+  const visibleMs = progress * windowMs
 
   return (
     <Card>
@@ -73,17 +89,23 @@ export function RasterPanel({ state }: { state: ExperimentState }) {
         <CardTitle>Spike raster</CardTitle>
         <CardDescription>
           0–{windowMs} ms · T4/T5 drive in, DNp01 out
+          {progress < 1 && ` · showing first ${visibleMs.toFixed(0)} ms`}
         </CardDescription>
       </CardHeader>
 
-      <Raster rows={state.raster} windowMs={windowMs} />
+      <Raster rows={state.raster} windowMs={windowMs} cutoffMs={visibleMs} />
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-ink-faint">
-        {state.raster.map((row) => (
-          <span key={row.group}>
-            {row.group} <span className="text-spike">{row.spikesMs.length}</span>
-          </span>
-        ))}
+        {state.raster.map((row) => {
+          const shown = row.spikesMs.filter((t) => t <= visibleMs).length
+          return (
+            <span key={row.group}>
+              {row.group}{' '}
+              <span className="text-spike">{shown}</span>
+              <span className="text-ink-faint"> / {row.spikesMs.length}</span>
+            </span>
+          )
+        })}
       </div>
 
       <p className="mt-3 text-xs text-ink-faint">

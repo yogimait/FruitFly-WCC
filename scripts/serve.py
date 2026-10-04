@@ -120,9 +120,19 @@ def build_experiment_view(measurement: dict, response: dict | None) -> dict:
 
         'sweep': [
             {
+                # angularSizeDeg carries the measurement WINDOW in ms for the surface sweep.
+                # The field name is historical; the dashboard labels the axis explicitly so the
+                # meaning is never ambiguous on screen.
                 'angularSizeDeg': r['window_ms'],
                 'latencyMs': None,
-                'responseHz': r['dnp01_spikes'],
+                'responseHz': (
+                    round(r['dnp01_spikes'] / (r['window_ms'] / 1000.0), 2)
+                    if r['window_ms'] else None
+                ),
+                'percentOfCeiling': (
+                    round(r['dnp01_spikes'] / r['ceiling'] * 100, 2)
+                    if r.get('ceiling') else None
+                ),
                 'saturated': r['saturated'],
             }
             for r in surface

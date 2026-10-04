@@ -1,175 +1,123 @@
 import { useState } from 'react'
 
 import { FindingsPanel } from '@/components/findings-panel'
-import { FlyPanel } from '@/components/fly-panel'
-import {
-  ReproPanel,
-  SeparabilityPanel,
-} from '@/components/measure-panels'
-import { LatencyPanel } from '@/components/latency-panel'
+import { ReproPanel } from '@/components/measure-panels'
 import { RasterPanel } from '@/components/raster-panel'
-import {
-  SaturationChart,
-  SweepChart,
-} from '@/components/sweep-charts'
+import { SceneView } from '@/components/scene-view'
+import { SaturationChart, SweepChart } from '@/components/sweep-charts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { REFERENCE } from '@/lib/experiment'
-import { sendControl, useExperimentState } from '@/lib/useExperiment'
+import { useExperimentState } from '@/lib/useExperiment'
+import { usePlayback } from '@/lib/usePlayback'
 
-const TABS = ['live', 'sweep', 'findings', 'reference'] as const
-type Tab = (typeof TABS)[number]
+const STIMULUS_FRAMES = 16
+const FRAME_MS = 667
 
 export default function App() {
   const state = useExperimentState()
-  const [busy, setBusy] = useState(false)
-  const [tab, setTab] = useState<Tab>('live')
+  const [showData, setShowData] = useState(false)
+  const playback = usePlayback(STIMULUS_FRAMES, FRAME_MS)
+  const playing = playback.state === 'running'
 
-  async function run(action: Parameters<typeof sendControl>[0]) {
-    setBusy(true)
-    try {
-      await sendControl(action)
-    } finally {
-      setBusy(false)
-    }
-  }
+  const gf = state.giantFiber
+  const invariant = state.findings?.verdict?.magnitude_invariant
 
   return (
     <div className="min-h-svh bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-          <div>
-            <h1 className="text-base font-medium text-ink">
-              LPLC2 → DNp01 latency
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-medium text-ink">
+              Can spike timing see what spike rate cannot?
             </h1>
-            <p className="mt-0.5 font-mono text-xs text-ink-faint">
-              MaleCNS v1.0 · {state.status}
-              {state.simulatedMs !== null && ` · ${state.simulatedMs.toFixed(0)} ms sim`}
-            </p>
+            {invariant === true && <Badge tone="danger">answer: no</Badge>}
           </div>
 
           <div className="flex items-center gap-2">
-            <Button size="sm" disabled={busy} onClick={() => void run('start')}>
-              Start
+            <Button size="sm" onClick={playback.start}>
+              {playing ? 'Running…' : 'Start'}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => void run('step')}
-            >
+            <Button size="sm" variant="outline" onClick={playback.step}>
               Step
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => void run('stop')}
-            >
+            <Button size="sm" variant="outline" onClick={playback.stop}>
               Stop
             </Button>
           </div>
         </div>
-
-        <nav className="mx-auto flex max-w-6xl gap-1 px-6 pb-2">
-          {TABS.map((name) => (
-            <button
-              key={name}
-              onClick={() => setTab(name)}
-              className={
-                tab === name
-                  ? 'rounded-md bg-surface-raised px-3 py-1 font-mono text-xs text-ink'
-                  : 'rounded-md px-3 py-1 font-mono text-xs text-ink-faint hover:text-ink-muted'
-              }
-            >
-              {name}
-            </button>
-          ))}
-        </nav>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-4 px-6 py-6">
-        {tab === 'live' && (
-          <>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <FlyPanel state={state} />
-              </div>
-              <LatencyPanel state={state} />
-            </div>
+      <main className="mx-auto max-w-5xl space-y-4 px-6 py-6">
+        <SceneView state={state} playing={playing} progress={playback.progress} />
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <RasterPanel state={state} />
-              <div className="space-y-4">
-                <ReproPanel state={state} />
-                <SeparabilityPanel state={state} />
-              </div>
-            </div>
-          </>
-        )}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card className="sm:col-span-1">
+            <p className="font-mono text-xs text-ink-faint">response</p>
+            <p className="mt-1 font-mono text-2xl text-spike">
+              {gf ? `${gf.spikeCount}` : '—'}
+            </p>
+            <p className="font-mono text-xs text-ink-faint">
+              {gf ? `${gf.rateHz?.toFixed(0)} Hz` : 'not measured'}
+            </p>
+          </Card>
 
-        {tab === 'sweep' && (
-          <>
+          <Card className="sm:col-span-1">
+            <p className="font-mono text-xs text-ink-faint">first spike</p>
+            <p className="mt-1 font-mono text-2xl text-spike">
+              {gf?.firstSpikeMs ? `${gf.firstSpikeMs.toFixed(2)} ms` : '—'}
+            </p>
+            <p className="font-mono text-xs text-ink-faint">
+              real flies: {REFERENCE.latencyMs.value} ms
+            </p>
+          </Card>
+
+          <Card className="sm:col-span-1">
+            <p className="font-mono text-xs text-ink-faint">input driven</p>
+            <p className="mt-1 font-mono text-2xl text-spike">67–6,719</p>
+            <p className="font-mono text-xs text-ink-faint">same response</p>
+          </Card>
+        </div>
+
+        <RasterPanel state={state} progress={playback.progress} />
+        <ReproPanel state={state} />
+
+        <button
+          onClick={() => setShowData((v) => !v)}
+          className="font-mono text-xs text-ink-faint underline underline-offset-4 hover:text-ink-muted"
+        >
+          {showData ? 'hide data' : 'show data & sources'}
+        </button>
+
+        {showData && (
+          <div className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-2">
               <SweepChart state={state} />
               <SaturationChart state={state} />
             </div>
-            <SeparabilityPanel state={state} />
-          </>
-        )}
-
-        {tab === 'findings' && <FindingsPanel state={state} />}
-
-        {tab === 'reference' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Published targets</CardTitle>
-              <CardDescription>
-                Every number this project is tested against, and where it comes from. Full
-                citations in docs/Biological-Reference.md.
-              </CardDescription>
-            </CardHeader>
-            <ul className="space-y-3">
-              {[
-                REFERENCE.latencyMs,
-                REFERENCE.sizeThresholdDeg,
-                REFERENCE.gfVisualInputShare,
-              ].map((r) => (
-                <li
-                  key={r.label}
-                  className="flex flex-wrap items-center gap-2 border-b border-border pb-2 font-mono text-xs last:border-0"
-                >
-                  <Badge tone="target">
-                    {r.value} {r.unit}
-                  </Badge>
-                  <span className="text-ink-muted">{r.label}</span>
-                  <span className="ml-auto text-ink-faint">{r.source}</span>
+            <FindingsPanel state={state} />
+            <Card>
+              <p className="font-mono text-xs text-ink-faint">sources</p>
+              <ul className="mt-2 space-y-1 font-mono text-xs text-ink-muted">
+                <li>19 ms escape latency — Ache et al. 2019, Curr Biol</li>
+                <li>42° looming size threshold — von Reyn et al. 2017</li>
+                <li>
+                  97.5% giant-fiber input from LPLC2 + LC4 — PLOS Biol 2025
                 </li>
-              ))}
-            </ul>
-          </Card>
+                <li>MaleCNS v1.0 connectome; LIF constants — Shiu et al. 2024</li>
+              </ul>
+            </Card>
+          </div>
         )}
 
         {state.serverError && (
-          <p className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 font-mono text-xs text-danger">
-            {state.serverError}
-          </p>
+          <p className="font-mono text-xs text-danger">{state.serverError}</p>
         )}
 
-        {state.message && (
-          <p className="font-mono text-xs text-ink-faint">{state.message}</p>
-        )}
-
-        <p className="pb-4 text-xs text-ink-faint">
-          Computational experiment. No weights are trained or updated anywhere in this
-          pipeline. Neural activity does not imply biological preference, attraction, or
-          learning. Body geometry is schematic and carries no biological claim.
+        <p className="pb-6 text-xs text-ink-faint">
+          Simulated from a published connectome. Nothing is trained. Measured offline and served
+          as data.
         </p>
       </main>
     </div>

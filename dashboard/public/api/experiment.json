@@ -36,55 +36,64 @@
       {
         "angularSizeDeg": 10.0,
         "latencyMs": null,
-        "responseHz": 1,
+        "responseHz": 100.0,
+        "percentOfCeiling": 25.0,
         "saturated": false
       },
       {
         "angularSizeDeg": 20.0,
         "latencyMs": null,
-        "responseHz": 5,
+        "responseHz": 250.0,
+        "percentOfCeiling": 62.5,
         "saturated": false
       },
       {
         "angularSizeDeg": 50.0,
         "latencyMs": null,
-        "responseHz": 17,
+        "responseHz": 340.0,
+        "percentOfCeiling": 85.0,
         "saturated": false
       },
       {
         "angularSizeDeg": 100.0,
         "latencyMs": null,
-        "responseHz": 37,
+        "responseHz": 370.0,
+        "percentOfCeiling": 92.5,
         "saturated": false
       },
       {
         "angularSizeDeg": 150.0,
         "latencyMs": null,
-        "responseHz": 57,
+        "responseHz": 380.0,
+        "percentOfCeiling": 95.0,
         "saturated": false
       },
       {
         "angularSizeDeg": 200.0,
         "latencyMs": null,
-        "responseHz": 77,
+        "responseHz": 385.0,
+        "percentOfCeiling": 96.25,
         "saturated": false
       },
       {
         "angularSizeDeg": 250.0,
         "latencyMs": null,
-        "responseHz": 97,
+        "responseHz": 388.0,
+        "percentOfCeiling": 97.0,
         "saturated": false
       },
       {
         "angularSizeDeg": 300.0,
         "latencyMs": null,
-        "responseHz": 117,
+        "responseHz": 390.0,
+        "percentOfCeiling": 97.5,
         "saturated": false
       },
       {
         "angularSizeDeg": 400.0,
         "latencyMs": null,
-        "responseHz": 157,
+        "responseHz": 392.5,
+        "percentOfCeiling": 98.12,
         "saturated": true
       }
     ],
