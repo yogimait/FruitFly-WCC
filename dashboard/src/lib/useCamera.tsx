@@ -27,21 +27,14 @@ export function useCamera(source: FeedSource) {
   const [motion, setMotion] = useState(0)
   /** Raw mean absolute luminance change, unmodified. Shown next to the normalised value. */
   const [motionRaw, setMotionRaw] = useState(0)
-  /** Per-cell motion energy on the 8x8 grid, normalised to 0..1. Real measured data. */
+  /**
+   * Per-cell motion energy on the 8x8 grid, as absolute luminance change in 0-255 units.
+   * Real measured data, deliberately not normalised — see the comment where it is set.
+   */
   const [grid, setGrid] = useState<number[] | null>(null)
 
   // Previous downsampled frame, for the motion measure the encoder actually uses.
   const prevRef = useRef<Uint8ClampedArray | null>(null)
-
-  /**
-   * Absolute threshold for calling a cell "hot", in luminance units (0-255).
-   *
-   * The previous version normalised each cell against the brightest cell in the frame, which
-   * made sensor noise look identical to a moving object: a raw measurement of 0.0016 lit 26 of
-   * 64 cells. Now a cell must clear a fixed bar in absolute terms, so quiet noise stays dark and
-   * only real change lights up.
-   */
-  const HOT_THRESHOLD = 26
 
   /**
    * Exponential smoothing over frames.
@@ -92,7 +85,23 @@ export function useCamera(source: FeedSource) {
     if (source !== 'camera' || status !== 'live') return
 
     let raf = 0
-    const GRID = 8
+    /**
+     * Photoreceptor sampling grid, box-averaged.
+     *
+     * Resolution is a real trade-off, and both extremes were measured and rejected:
+     *
+     *   8x8, point-sampled  - a block spans 80x60 px, so a face moving slowly changes almost
+     *                         nothing and real motion fell below any usable bar.
+     *   40x40, point-sampled - reads raw per-pixel sensor jitter; a still webcam measured a
+     *                         peak of 17 luminance levels of pure noise.
+     *
+     * 16x16 box-averaged balances the two: each block is 40x30 px, which is wide enough to
+     * average out compression and sensor noise but small enough that a moving face still
+     * shifts several block means. 256 samples also sits below the connectome's 4,107
+     * photoreceptor input ports, so this is a coarse sampling of a real input layer rather than
+     * an invented one.
+     */
+    const GRID = 16
 
     const tick = () => {
       const video = videoRef.current
@@ -123,12 +132,13 @@ export function useCamera(source: FeedSource) {
             : raw_cells
           smoothRef.current = smoothed
 
-          // Absolute threshold, so noise stays dark. Scaled by the strongest cell only when
-          // that cell is itself well above the bar, which keeps dynamic range without
-          // promoting noise to signal.
-          const peak = Math.max(...smoothed)
-          const scale = peak > HOT_THRESHOLD ? peak : HOT_THRESHOLD
-          setGrid(smoothed.map((v) => Math.min(1, v / scale)))
+          // Cells are reported as ABSOLUTE luminance change (0-255), not normalised against
+          // the frame's own peak. Normalising by the peak made the result depend on how
+          // bright the strongest change happened to be: a synthetic high-contrast bar reads
+          // 1.0 and drives the encoder, while a real face under room light peaks near 4
+          // levels and reads ~0.15, below any drive threshold. Absolute values make both
+          // cases behave the same way and let the encoder apply one fixed criterion.
+          setGrid(smoothed)
 
           prevRef.current = new Uint8ClampedArray(data)
           setMotionRaw(mean)
@@ -144,6 +154,18 @@ export function useCamera(source: FeedSource) {
   }, [source, status])
 
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), [])
+
+  // Measurement hook. The noise floor and the drive threshold are chosen from measured values
+  // (scripts/measure_noise_floor.py), and neither is guessable from the rendered UI. Exposing
+  // the raw grid lets that script read the same numbers the encoder reads, instead of inferring
+  // them from a screenshot. Read-only, and only useful while the camera is live.
+  useEffect(() => {
+    const w = window as unknown as Record<string, unknown>
+    w.__gridProbe = () => grid
+    return () => {
+      delete w.__gridProbe
+    }
+  }, [grid])
 
   return { videoRef, canvasRef, status, motion, motionRaw, grid, start, stop }
 }

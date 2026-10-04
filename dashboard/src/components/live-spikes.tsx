@@ -24,8 +24,32 @@ const WINDOW_MS = 40
 /** Sub-millisecond spread used to reveal co-occurring spikes; scaled by contrast. */
 const JITTER_MS = 2.0
 
-/** A cell must exceed this share of the current peak before it is considered driven. */
-const DRIVE_THRESHOLD = 0.18
+/**
+ * A cell must change luminance by more than this, in absolute levels (0-255), to count as
+ * driven.
+ *
+ * This has to be an ABSOLUTE criterion, not a share of the frame's brightest cell. A ratio of
+ * the peak makes the result depend on how bright the strongest change happens to be: a
+ * high-contrast synthetic bar normalises to 1.0 and spikes, while a real face moving under
+ * room light peaks near 19 levels and, once divided by a fixed floor, fell below any usable
+ * bar and produced nothing at all.
+ *
+ * Measured on the 16x16 box-averaged grid the app samples (scripts/measure_noise_floor.py):
+ *
+ *   still / noise   peak  0.0 levels
+ *   face (leaning)  peak 18.9 levels, 7 cells above 6
+ *   bar (sweeping)  peak 85.5 levels, 64 cells above 6
+ *
+ * 6 is chosen over the technically-admissible 12 because 12 admits only 1 face cell, which is
+ * too fragile for a live demo, while 6 still clears the measured noise floor with 6 levels to
+ * spare. Caveat: the synthetic noise clip measures a peak of 0.0, cleaner than a real webcam,
+ * so real sensor noise may sit somewhat higher. If the fly twitches when nothing is moving,
+ * raise this.
+ */
+const DRIVE_THRESHOLD_LUMINANCE = 6
+
+/** Contrast is expressed against the full 0-255 luminance scale, not the frame's own peak. */
+const LUMINANCE_SCALE = 255
 
 export interface LiveSpike {
   /** 0..1 position in the raster window. */
@@ -55,16 +79,17 @@ export function predictSpikes(
 ): LiveSpike[] {
   if (!grid) return []
 
-  const peak = Math.max(...grid)
-  if (peak <= 0.01) return []
-
   const out: LiveSpike[] = []
 
   // Driven cells become T4/T5 input spikes, one per cell, latency set by local contrast.
+  // Contrast is absolute luminance change over the full 0-255 scale, so a dim real scene and a
+  // bright synthetic one drive the encoder on the same terms.
   let driven = 0
   for (let i = 0; i < grid.length; i++) {
-    const contrast01 = grid[i]
-    if (contrast01 < DRIVE_THRESHOLD) continue
+    const deltaLuminance = grid[i]
+    if (deltaLuminance < DRIVE_THRESHOLD_LUMINANCE) continue
+
+    const contrast01 = Math.min(1, deltaLuminance / LUMINANCE_SCALE)
     driven += 1
 
     const latencyMs = Math.max(

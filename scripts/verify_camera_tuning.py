@@ -1,11 +1,12 @@
-"""Fine-tuning check: sensor noise must NOT register as stimulus, real motion must.
+"""Camera encoder response: noise must stay silent, real motion must drive spikes.
 
-Two regressions this guards:
-  1. per-cell normalisation against the frame's own brightest cell promoted noise to full
-     scale, so a raw measurement of 0.0016 lit 26 of 64 cells
-  2. the encoder's predicted spike latency must shorten as contrast rises — that monotone
-     relationship is the only reason temporal encoding is worth anything, so it is asserted
-     rather than assumed
+This covers what the earlier camera tests missed. They used only a high-contrast synthetic bar,
+which made the peak-relative threshold look correct — a real subject under room light is far
+dimmer, and produced zero spikes while reporting non-zero motion.
+
+Four clips, all from fake_video.py:
+  still / noise  must drive no cells
+  face / bar     must drive cells and produce spikes in all three populations
 """
 
 from __future__ import annotations
@@ -17,47 +18,21 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+from fake_video import write_y4m
+
 URL = 'http://localhost:5173/'
-OUT = Path(r'C:\Users\Hp\AppData\Local\Temp\opencode')
+SHOTS = Path(r'C:\Users\Hp\AppData\Local\Temp\opencode')
+
+LABELS = ('T4/T5 (13,595)', 'LPLC2 (185)', 'DNp01 (2)')
 
 
-def write_y4m(path: Path, kind: str, frames: int = 40, w: int = 320, h: int = 240) -> None:
-    """
-    kind:
-      noise  - stationary subject plus low-amplitude per-frame flicker (sensor noise)
-      still  - perfectly frozen frame
-      moving - bright bar sweeping across
-    """
-    with path.open('wb') as f:
-        f.write(b'YUV4MPEG2 W320 H240 F30:1 Ip A1:1 C420mpeg2\n')
-        for i in range(frames):
-            y = bytearray(w * h)
-            for row in range(h):
-                base = row * w
-                for col in range(w):
-                    if kind == 'moving':
-                        bar = int((i / frames) * w)
-                        v = 215 if abs(col - bar) < 26 else 24
-                    else:
-                        # Stationary subject; `noise` adds a few levels of flicker that a
-                        # real webcam exhibits even when nothing is happening.
-                        flicker = ((i * 7 + col * 13 + row * 3) % 11) if kind == 'noise' else 0
-                        v = 120 + ((col // 40) % 2) * 90 + flicker
-                    y[base + col] = max(0, min(255, v))
-            f.write(b'FRAME\n')
-            f.write(bytes(y))
-            f.write(bytes([128]) * (w * h // 4))
-            f.write(bytes([128]) * (w * h // 4))
-
-
-def sample(kind: str) -> tuple[float | None, float | None, int, int]:
-    path = Path(tempfile.gettempdir()) / f'cam-{kind}.y4m'
-    write_y4m(path, kind)
+def sample(kind: str) -> dict[str, float | int | None]:
+    clip = write_y4m(Path(tempfile.gettempdir()) / f'cam-{kind}.y4m', kind)
     with sync_playwright() as p:
         browser = p.chromium.launch(args=[
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            f'--use-file-for-fake-video-capture={path}',
+            f'--use-file-for-fake-video-capture={clip}',
         ])
         ctx = browser.new_context(viewport={'width': 1400, 'height': 1100}, permissions=['camera'])
         page = ctx.new_page()
@@ -69,72 +44,77 @@ def sample(kind: str) -> tuple[float | None, float | None, int, int]:
         body = page.inner_text('body')
         raw = re.search(r'live motion energy from your camera\s*\n\s*([0-9.]+)', body)
 
-        # Read the spike counts out of the live spike panel text. Parsing the rendered labels is
-        # simpler and less brittle than walking the SVG, and it asserts what a viewer reads.
         def count(label: str) -> int:
             m = re.search(re.escape(label) + r'\s+(\d+)', body)
             return int(m.group(1)) if m else 0
 
-        driven = count('T4/T5 (13,595)')
-        pooled = count('LPLC2 (185)')
-        descending = count('DNp01 (2)')
-        total_spikes = driven + pooled + descending
-
-        page.screenshot(path=str(OUT / f'tune-{kind}.png'), full_page=True)
-        print(f'{kind:>6}: raw={raw.group(1) if raw else None} '
-              f'T4/T5={driven} LPLC2={pooled} DNp01={descending} total={total_spikes}')
+        counts = {label: count(label) for label in LABELS}
+        grid = page.evaluate('() => window.__gridProbe ? window.__gridProbe() : null')
+        page.screenshot(path=str(SHOTS / f'tune-{kind}.png'), full_page=True)
         browser.close()
-        return (
-            float(raw.group(1)) if raw else None,
-            driven,
-            total_spikes,
-            24,
-        )
+
+        return {
+            'raw': float(raw.group(1)) if raw else None,
+            'peak': max(grid) if grid else None,
+            'total': sum(counts.values()),
+            **counts,
+        }
 
 
 def main() -> None:
+    results = {k: sample(k) for k in ('still', 'noise', 'face', 'bar')}
+
+    print(f"{'clip':>6} {'raw':>8} {'peak':>7} {'T4/T5':>7} {'LPLC2':>6} {'DNp01':>6} {'total':>6}")
+    for kind, r in results.items():
+        raw = f"{r['raw']:.4f}" if r['raw'] is not None else 'none'
+        peak = f"{r['peak']:.1f}" if r['peak'] is not None else 'none'
+        print(f"{kind:>6} {raw:>8} {peak:>7} {r[LABELS[0]]:>7} {r[LABELS[1]]:>6} "
+              f"{r[LABELS[2]]:>6} {r['total']:>6}")
+
     failures: list[str] = []
 
-    noise_raw, noise_cells, noise_spikes, total = sample('noise')
-    still_raw, still_cells, still_spikes, _ = sample('still')
-    move_raw, move_cells, move_spikes, _ = sample('moving')
+    # 1. A stationary scene must be completely silent.
+    for kind in ('still', 'noise'):
+        if results[kind]['total'] != 0:
+            failures.append(
+                f'{kind} clip produced {results[kind]["total"]} spikes; must be 0'
+            )
 
-    print()
-    print(f'noise: {noise_cells}/{total} driven cells, {noise_spikes} spikes')
-    print(f'still: {still_cells}/{total} driven cells, {still_spikes} spikes')
-    print(f'moving: {move_cells}/{total} driven cells, {move_spikes} spikes')
-
-    # 1. Noise must not drive cells. Previously per-cell peak normalisation turned 0.0016 of
-    #    noise into 26 of 64 driven cells.
-    if noise_cells > 2:
+    # 2. A real subject — the case that was silently broken — must drive the encoder.
+    face = results['face']
+    if face[LABELS[0]] <= 0:
         failures.append(
-            f'sensor noise drives {noise_cells}/{total} cells; want <= 2'
+            f'a moving face drives no T4/T5 cells (peak {face["peak"]}); the encoder '
+            f'stays silent on real subjects'
         )
+    if face['total'] < 5:
+        failures.append(f'a moving face yields only {face["total"]} spikes; want >= 5')
 
-    # 2. A perfectly frozen frame must drive nothing beyond the baseline cells.
-    if still_cells > 3:
-        failures.append(f'frozen frame drives {still_cells}/{total} cells; want <= 3')
+    # 3. All three populations must respond, so the full pathway is exercised.
+    for label in LABELS:
+        if face[label] <= 0:
+            failures.append(f'face clip: {label} produced no spikes')
 
-    # 3. Real motion must drive a substantial number of cells.
-    if move_cells < 6:
-        failures.append(f'moving subject drives only {move_cells}/{total} cells; want >= 6')
-
-    # 4. Spikes must appear for real motion, across all three populations.
-    if move_spikes < 10:
-        failures.append(f'moving subject yields only {move_spikes} spikes; want >= 10')
+    # 4. The easy synthetic case must also work, or the encoder is broken outright.
+    if results['bar'][LABELS[0]] <= 0:
+        failures.append('sweeping bar drives no T4/T5 cells')
 
     # 5. Motion must separate from noise on the raw measurement.
-    if None in (noise_raw, move_raw):
+    if None in (results['bar']['raw'], results['noise']['raw']):
         failures.append('raw motion not rendered')
-    elif move_raw <= noise_raw:
-        failures.append(f'motion does not exceed noise ({move_raw} vs {noise_raw})')
+    elif results['bar']['raw'] <= results['noise']['raw']:
+        failures.append(
+            f'bar motion does not exceed noise '
+            f'({results["bar"]["raw"]} vs {results["noise"]["raw"]})'
+        )
 
+    print()
     if failures:
-        print('\nFAIL')
+        print('FAIL')
         for f in failures:
             print(f'  {f}')
         sys.exit(1)
-    print('\nPASS: noise suppressed, motion drives cells and produces spikes')
+    print('PASS: noise silent, real subjects and synthetic motion both drive the encoder')
 
 
 if __name__ == '__main__':
