@@ -1,0 +1,6 @@
+﻿.venv/
+__pycache__/
+*.pyc
+.vibe-wise/
+data/*.png
+node_modules/
